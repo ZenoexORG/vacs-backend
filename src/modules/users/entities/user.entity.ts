@@ -1,5 +1,6 @@
-import { Entity, Column, PrimaryColumn, ManyToOne, CreateDateColumn, JoinColumn } from 'typeorm';
+import { Entity, Column, PrimaryColumn, ManyToOne, CreateDateColumn, JoinColumn, OneToMany } from 'typeorm';
 import { Role } from '../../roles/entities/role.entity';
+import { Vehicle } from '../../vehicles/entities/vehicle.entity';
 
 @Entity('users')
 export class User {
@@ -21,4 +22,7 @@ export class User {
     @ManyToOne(() => Role, (role) => role.users, { nullable: true, onDelete: 'SET NULL' })
     @JoinColumn({ name: 'role_id' })
     role: Role;
+
+    @OneToMany(() => Vehicle, (vehicle) => vehicle.user)    
+    vehicles: Vehicle[];
 }

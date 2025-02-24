@@ -7,6 +7,11 @@ import { EmployeesModule } from './modules/employees/employees.module';
 import { RolesModule } from './modules/roles/roles.module';
 import { PermissionsModule } from './modules/permissions/permissions.module';
 import { ConfigModule } from '@nestjs/config';
+import { VehiclesModule } from './modules/vehicles/vehicles.module';
+import { VehicleClassesModule } from './modules/vehicle_classes/vehicle-classes.module';
+import { IncidentsModule } from './modules/incidents/incidents.module';
+import { AccessLogsModule } from './modules/access_logs/access-logs.module';
+
 
 @Module({
   imports: [
@@ -16,6 +21,10 @@ import { ConfigModule } from '@nestjs/config';
     EmployeesModule,
     RolesModule,
     PermissionsModule,
+    VehiclesModule,
+    VehicleClassesModule,
+    IncidentsModule,
+    AccessLogsModule,
   ],
   controllers: [AppController],
   providers: [AppService],

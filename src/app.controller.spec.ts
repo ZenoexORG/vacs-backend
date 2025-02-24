@@ -14,9 +14,19 @@ describe('AppController', () => {
     appController = app.get<AppController>(AppController);
   });
 
-  describe('root', () => {
-    it('should return "Hello World!"', () => {
-      expect(appController.getHello()).toBe('Hello World!');
-    });
+  it('debe estar definido', () => {
+    expect(appController).toBeDefined();
+  });
+
+  it('debe retornar la información de la API correctamente', () => {
+    const apiInfo = appController.getApiInfo();
+    
+    expect(apiInfo).toHaveProperty('name', 'Vehicle Access Control API');
+    expect(apiInfo).toHaveProperty('description', 'API for managing vehicle access control in UTB');
+    expect(apiInfo).toHaveProperty('version', '1.0.0');
+    expect(apiInfo).toHaveProperty('status');
+    expect(apiInfo).toHaveProperty('uptime');
+    expect(apiInfo).toHaveProperty('documentation', '/docs');
+    expect(typeof apiInfo.uptime).toBe('number');
   });
 });
