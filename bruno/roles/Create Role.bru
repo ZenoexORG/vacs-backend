@@ -1,0 +1,18 @@
+meta {
+  name: Create Role
+  type: http
+  seq: 1
+}
+
+post {
+  url: {{url}}/roles
+  body: json
+  auth: none
+}
+
+body:json {
+  {
+    "name": "admin",
+    "description": "Administrador del sistema"
+  }
+}

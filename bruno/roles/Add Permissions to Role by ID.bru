@@ -1,0 +1,15 @@
+meta {
+  name: Add Permissions to Role by ID
+  type: http
+  seq: 6
+}
+
+post {
+  url: {{url}}/roles/:id/permissions
+  body: none
+  auth: none
+}
+
+params:path {
+  id: 1
+}

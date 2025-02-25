@@ -1,0 +1,112 @@
+meta {
+  name: Update Role by ID
+  type: http
+  seq: 4
+}
+
+patch {
+  url: {{url}}/roles/:id
+  body: json
+  auth: none
+}
+
+params:path {
+  id: 1
+}
+
+body:json {
+  {
+    "id": 1,
+    "name": "admin",
+    "description": "Administrador del sistema",
+    "users": [
+      {
+        "id": 123456789,
+        "name": "Example",
+        "last_name": "Example",
+        "role_id": 1,
+        "created_at": "2025-02-25T19:11:39.587Z"
+      }
+    ],
+    "employees": [
+      {
+        "id": 123456789,
+        "name": "Juan",
+        "last_name": "Pérez",
+        "role_id": 1,
+        "username": "juanperez",
+        "password": {
+          "type": "Buffer",
+          "data": [
+            36,
+            50,
+            98,
+            36,
+            49,
+            48,
+            36,
+            68,
+            66,
+            80,
+            102,
+            51,
+            87,
+            70,
+            79,
+            122,
+            111,
+            73,
+            122,
+            79,
+            121,
+            110,
+            81,
+            81,
+            116,
+            118,
+            112,
+            49,
+            79,
+            77,
+            50,
+            111,
+            86,
+            87,
+            90,
+            72,
+            116,
+            88,
+            57,
+            79,
+            104,
+            119,
+            79,
+            55,
+            113,
+            56,
+            65,
+            56,
+            103,
+            77,
+            99,
+            65,
+            50,
+            105,
+            104,
+            56,
+            53,
+            102,
+            71,
+            105
+          ]
+        }
+      }
+    ],
+    "permissions": [
+      {
+        "id": 1,
+        "name": "create:user"
+      }
+    ]
+  }
+}

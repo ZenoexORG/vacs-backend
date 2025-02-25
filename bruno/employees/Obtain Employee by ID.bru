@@ -1,0 +1,15 @@
+meta {
+  name: Obtain Employee by ID
+  type: http
+  seq: 3
+}
+
+get {
+  url: {{url}}/employees/:id
+  body: none
+  auth: none
+}
+
+params:path {
+  id: 123456789
+}
