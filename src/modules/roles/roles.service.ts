@@ -17,26 +17,26 @@ export class RolesService {
 
     @InjectRepository(Permission)
     private permissionsRepository: Repository<Permission>,
-  ){}
+  ) { }
 
-  async create(createRoleDto: CreateRoleDto): Promise<Role>{
+  async create(createRoleDto: CreateRoleDto): Promise<Role> {
     const role = this.rolesRepository.create(createRoleDto);
     return this.rolesRepository.save(role);
   }
 
-  async findAll(){
-    return this.rolesRepository.find({relations: ['users', 'employees', 'permissions']});
+  async findAll() {
+    return this.rolesRepository.find({ relations: ['users', 'employees', 'permissions'] });
   }
 
-  async findOne(id: number){
-    return this.rolesRepository.findOne({where: {id}, relations: ['users', 'employees', 'permissions']});
+  async findOne(id: number) {
+    return this.rolesRepository.findOne({ where: { id }, relations: ['users', 'employees', 'permissions'] });
   }
 
-  async update(id: number, updateRoleDto: UpdateRoleDto){
+  async update(id: number, updateRoleDto: UpdateRoleDto) {
     return this.rolesRepository.update(id, updateRoleDto);
   }
 
-  async remove(id: number){
+  async remove(id: number) {
     return this.rolesRepository.delete(id);
   }
 

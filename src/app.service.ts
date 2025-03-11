@@ -2,7 +2,7 @@ import { Injectable } from '@nestjs/common';
 
 @Injectable()
 export class AppService {
-  getApiInfo(){
+  getApiInfo() {
     const isRunning = process.uptime() > 0;
     return {
       name: 'Vehicle Access Control API',

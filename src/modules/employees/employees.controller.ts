@@ -7,37 +7,37 @@ import { ApiTags, ApiOperation, ApiParam, ApiBody } from '@nestjs/swagger';
 @ApiTags('Employees')
 @Controller('employees')
 export class EmployeesController {
-    constructor(private readonly employeesService: EmployeesService) {}
+    constructor(private readonly employeesService: EmployeesService) { }
 
-    @ApiOperation({ summary: 'Crear un empleado' })
+    @ApiOperation({ summary: 'Create an employee' })
     @ApiBody({ type: CreateEmployeeDto })
     @Post()
     create(@Body() createEmployeeDto: CreateEmployeeDto) {
         return this.employeesService.create(createEmployeeDto);
     }
 
-    @ApiOperation({ summary: 'Listar empleados' })
+    @ApiOperation({ summary: 'Get all employees' })
     @Get()
     findAll() {
         return this.employeesService.findAll();
     }
 
-    @ApiOperation({ summary: 'Buscar un empleado por id' })
-    @ApiParam({ name: 'id', description: 'Id único del empleado', example: 1})
+    @ApiOperation({ summary: 'Get an employee by id' })
+    @ApiParam({ name: 'id', description: 'Employee unique id', example: 1 })
     @Get(':id')
     findOne(@Param('id') id: string) {
         return this.employeesService.findOne(+id);
     }
 
-    @ApiOperation({ summary: 'Actualizar un empleado' })
-    @ApiParam({ name: 'id', description: 'Id único del empleado', example: 1})    
+    @ApiOperation({ summary: 'Update an employee' })
+    @ApiParam({ name: 'id', description: 'Employee unique id', example: 1 })
     @Patch(':id')
     update(@Param('id') id: string, @Body() updateEmployeeDto: UpdateEmployeeDto) {
         return this.employeesService.update(+id, updateEmployeeDto);
     }
 
-    @ApiOperation({ summary: 'Eliminar un empleado' })
-    @ApiParam({ name: 'id', description: 'Id único del empleado', example: 1})
+    @ApiOperation({ summary: 'Delete an employee' })
+    @ApiParam({ name: 'id', description: 'Employee unique id', example: 1 })
     @Delete(':id')
     remove(@Param('id') id: string) {
         return this.employeesService.remove(+id);

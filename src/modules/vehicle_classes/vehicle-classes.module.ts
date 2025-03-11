@@ -10,4 +10,4 @@ import { Vehicle } from '../vehicles/entities/vehicle.entity';
   controllers: [VehicleClassesController],
   providers: [VehicleClassesService],
 })
-export class VehicleClassesModule {}
+export class VehicleClassesModule { }

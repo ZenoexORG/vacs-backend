@@ -9,52 +9,52 @@ import { ApiTags, ApiOperation, ApiParam, ApiBody } from '@nestjs/swagger';
 @ApiTags('Roles')
 @Controller('roles')
 export class RolesController {
-    constructor(private readonly rolesService: RolesService) {}
+    constructor(private readonly rolesService: RolesService) { }
 
-    @ApiOperation({ summary: 'Crear un rol' })
+    @ApiOperation({ summary: 'Create a role' })
     @ApiBody({ type: CreateRoleDto })
     @Post()
     create(@Body() createRoleDto: CreateRoleDto) {
         return this.rolesService.create(createRoleDto);
     }
 
-    @ApiOperation({ summary: 'Listar roles' })
+    @ApiOperation({ summary: 'Get all roles' })
     @Get()
     findAll() {
         return this.rolesService.findAll();
     }
 
-    @ApiOperation({ summary: 'Buscar un rol por id' })
-    @ApiParam({ name: 'id', description: 'Id único del rol', example: 1 , type: Number})
+    @ApiOperation({ summary: 'Get a role by id' })
+    @ApiParam({ name: 'id', description: 'Role unique id', example: 1, type: Number })
     @Get(':id')
     findOne(@Param('id') id: string) {
         return this.rolesService.findOne(+id);
     }
 
-    @ApiOperation({ summary: 'Actualizar un rol' })
-    @ApiParam({ name: 'id', description: 'Id único del rol', example: 1 , type: Number})
+    @ApiOperation({ summary: 'Update a role' })
+    @ApiParam({ name: 'id', description: 'Role unique id', example: 1, type: Number })
     @Patch(':id')
     update(@Param('id') id: string, @Body() updateRoleDto: UpdateRoleDto) {
         return this.rolesService.update(+id, updateRoleDto);
     }
-    
-    @ApiOperation({ summary: 'Eliminar un rol' })
-    @ApiParam({ name: 'id', description: 'Id único del rol', example: 1 , type: Number})
+
+    @ApiOperation({ summary: 'Delete a role' })
+    @ApiParam({ name: 'id', description: 'Role unique id', example: 1, type: Number })
     @Delete(':id')
     remove(@Param('id') id: string) {
         return this.rolesService.remove(+id);
     }
 
-    @ApiOperation({ summary: 'Asignar permisos a un rol' })
-    @ApiParam({ name: 'id', description: 'Id único del rol', example: 1 , type: Number})
+    @ApiOperation({ summary: 'Assign permissions to a role' })
+    @ApiParam({ name: 'id', description: 'Role unique id', example: 1, type: Number })
     @ApiBody({ type: AssignPermissionsDto })
     @Post(':id/permissions')
     assignPermissions(@Param('id') id: string, @Body() assignPermissionsDto: AssignPermissionsDto) {
         return this.rolesService.assignPermissions(+id, assignPermissionsDto);
     }
 
-    @ApiOperation({ summary: 'Eliminar permisos de un rol' })
-    @ApiParam({ name: 'id', description: 'Id único del rol', example: 1 , type: Number})
+    @ApiOperation({ summary: 'Remove permissions from a role' })
+    @ApiParam({ name: 'id', description: 'Role unique id', example: 1, type: Number })
     @ApiBody({ type: AssignPermissionsDto })
     @Delete(':id/permissions')
     removePermissions(@Param('id') id: string, @Body() deletePermissionsDto: DeletePermissionsDto) {

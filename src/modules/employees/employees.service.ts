@@ -10,7 +10,7 @@ export class EmployeesService {
     constructor(
         @InjectRepository(Employee)
         private employeesRepository: Repository<Employee>,
-    ){}
+    ) { }
 
     async create(createEmployeeDto: CreateEmployeeDto): Promise<Employee> {
         const employee = this.employeesRepository.create(createEmployeeDto);
@@ -18,11 +18,11 @@ export class EmployeesService {
     }
 
     async findAll() {
-        return this.employeesRepository.find({relations: ['role']});
+        return this.employeesRepository.find({ relations: ['role'] });
     }
 
     async findOne(id: number) {
-        return this.employeesRepository.findOne({where: {id}, relations: ['role']});
+        return this.employeesRepository.findOne({ where: { id }, relations: ['role'] });
     }
 
     async update(id: number, updateEmployeeDto: UpdateEmployeeDto) {
@@ -34,6 +34,6 @@ export class EmployeesService {
     }
 
     async findByUsername(username: string) {
-        return this.employeesRepository.findOne({where: {username}});
+        return this.employeesRepository.findOne({ where: { username } });
     }
 }

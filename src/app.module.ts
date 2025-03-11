@@ -29,4 +29,4 @@ import { AccessLogsModule } from './modules/access_logs/access-logs.module';
   controllers: [AppController],
   providers: [AppService],
 })
-export class AppModule {}
+export class AppModule { }

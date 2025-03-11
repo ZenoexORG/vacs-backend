@@ -7,37 +7,37 @@ import { ApiTags, ApiOperation, ApiParam, ApiBody } from '@nestjs/swagger';
 @ApiTags('Incidents')
 @Controller('incidents')
 export class IncidentsController {
-    constructor(private readonly incidentsService: IncidentsService) {}
+    constructor(private readonly incidentsService: IncidentsService) { }
 
-    @ApiOperation({ summary: 'Crear un incidente' })
+    @ApiOperation({ summary: 'Create an incident' })
     @ApiBody({ type: CreateIncidentDto })
     @Post()
     create(@Body() createIncidentDto: CreateIncidentDto) {
         return this.incidentsService.create(createIncidentDto);
     }
 
-    @ApiOperation({ summary: 'Listar incidentes' })
+    @ApiOperation({ summary: 'Get all incidents' })
     @Get()
     findAll() {
         return this.incidentsService.findAll();
     }
 
-    @ApiOperation({ summary: 'Buscar un incidente por id' })
-    @ApiParam({ name: 'id', description: 'Id único del incidente', example: 1})
+    @ApiOperation({ summary: 'Get an incident by id' })
+    @ApiParam({ name: 'id', description: 'Incident unique id', example: 1 })
     @Get(':id')
     findOne(@Param('id') id: number) {
         return this.incidentsService.findOne(id);
     }
 
-    @ApiOperation({ summary: 'Actualizar un incidente' })
-    @ApiParam({ name: 'id', description: 'Id único del incidente', example: 1})
+    @ApiOperation({ summary: 'Update an incident' })
+    @ApiParam({ name: 'id', description: 'Incident unique id', example: 1 })
     @Patch(':id')
     update(@Param('id') id: number, @Body() updateIncidentDto: UpdateIncidentDto) {
         return this.incidentsService.update(id, updateIncidentDto);
     }
 
-    @ApiOperation({ summary: 'Eliminar un incidente' })
-    @ApiParam({ name: 'id', description: 'Id único del incidente', example: 1})
+    @ApiOperation({ summary: 'Delete an incident' })
+    @ApiParam({ name: 'id', description: 'Incident unique id', example: 1 })
     @Delete(':id')
     remove(@Param('id') id: number) {
         return this.incidentsService.remove(id);

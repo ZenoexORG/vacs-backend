@@ -11,4 +11,4 @@ import { Role } from '../roles/entities/role.entity';
   providers: [EmployeesService],
 })
 
-export class EmployeesModule {}
+export class EmployeesModule { }

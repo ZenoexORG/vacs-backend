@@ -13,13 +13,13 @@ export class Employee {
     @Column()
     last_name: string;
 
-    @Column({nullable: true})
+    @Column({ nullable: true })
     role_id?: number;
 
-    @Column({unique: true})
+    @Column({ unique: true })
     username: string;
 
-    @Column({type: 'bytea'})
+    @Column({ type: 'bytea' })
     password: Buffer;
 
     @ManyToOne(() => Role, (role) => role.employees, { nullable: true, onDelete: 'SET NULL' })

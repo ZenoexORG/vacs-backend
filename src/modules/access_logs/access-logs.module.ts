@@ -9,4 +9,4 @@ import { AccessLog } from './entities/access-log.entity';
   controllers: [AccessLogsController],
   providers: [AccessLogsService],
 })
-export class AccessLogsModule {}
+export class AccessLogsModule { }

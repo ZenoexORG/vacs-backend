@@ -13,16 +13,16 @@ export class User {
     @Column()
     last_name: string;
 
-    @Column({nullable: true})
+    @Column({ nullable: true })
     role_id?: number;
 
-    @CreateDateColumn({ type: 'timestamptz' , default: () => 'CURRENT_TIMESTAMP'})
+    @CreateDateColumn({ type: 'timestamptz', default: () => 'CURRENT_TIMESTAMP' })
     created_at: Date;
 
     @ManyToOne(() => Role, (role) => role.users, { nullable: true, onDelete: 'SET NULL' })
     @JoinColumn({ name: 'role_id' })
     role: Role;
 
-    @OneToMany(() => Vehicle, (vehicle) => vehicle.user)    
+    @OneToMany(() => Vehicle, (vehicle) => vehicle.user)
     vehicles: Vehicle[];
 }

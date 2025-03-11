@@ -12,10 +12,10 @@ export class Vehicle {
     @Column()
     class_id: number;
 
-    @Column({nullable: true})
+    @Column({ nullable: true })
     user_id?: number;
 
-    @Column({nullable: true})
+    @Column({ nullable: true })
     soat?: string;
 
     @ManyToOne(() => User, (user) => user.vehicles, { nullable: true, onDelete: 'SET NULL' })

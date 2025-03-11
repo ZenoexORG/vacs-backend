@@ -7,37 +7,37 @@ import { ApiTags, ApiOperation, ApiParam, ApiBody } from '@nestjs/swagger';
 @ApiTags('Vehicle Classes')
 @Controller('vehicle-classes')
 export class VehicleClassesController {
-    constructor(private readonly vehicleClassesService: VehicleClassesService) {}
+    constructor(private readonly vehicleClassesService: VehicleClassesService) { }
 
-    @ApiOperation({ summary: 'Crear una clase de vehículo' })
+    @ApiOperation({ summary: 'Create a vehicle class' })
     @ApiBody({ type: CreateVehicleClassDto })
     @Post()
     create(@Body() createVehicleClassDto: CreateVehicleClassDto) {
         return this.vehicleClassesService.create(createVehicleClassDto);
     }
 
-    @ApiOperation({ summary: 'Listar clases de vehículos' })
+    @ApiOperation({ summary: 'Get all vehicle classes' })
     @Get()
     findAll() {
         return this.vehicleClassesService.findAll();
     }
 
-    @ApiOperation({ summary: 'Buscar una clase de vehículo por id' })
-    @ApiParam({ name: 'id', description: 'Id único de la clase de vehículo', example: 1})
+    @ApiOperation({ summary: 'Get a vehicle class by id' })
+    @ApiParam({ name: 'id', description: 'Vehicle class unique id', example: 1 })
     @Get(':id')
     findOne(@Param('id') id: string) {
         return this.vehicleClassesService.findOne(+id);
     }
 
-    @ApiOperation({ summary: 'Actualizar una clase de vehículo' })
-    @ApiParam({ name: 'id', description: 'Id único de la clase de vehículo', example: 1})    
+    @ApiOperation({ summary: 'Update a vehicle class' })
+    @ApiParam({ name: 'id', description: 'Vehicle class unique id', example: 1 })
     @Patch(':id')
     update(@Param('id') id: string, @Body() updateVehicleClassDto: UpdateVehicleClassDto) {
         return this.vehicleClassesService.update(+id, updateVehicleClassDto);
     }
 
-    @ApiOperation({ summary: 'Eliminar una clase de vehículo' })
-    @ApiParam({ name: 'id', description: 'Id único de la clase de vehículo', example: 1})
+    @ApiOperation({ summary: 'Delete a vehicle class' })
+    @ApiParam({ name: 'id', description: 'Vehicle class unique id', example: 1 })
     @Delete(':id')
     remove(@Param('id') id: string) {
         return this.vehicleClassesService.remove(+id);

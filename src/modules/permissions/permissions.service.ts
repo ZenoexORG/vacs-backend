@@ -10,7 +10,7 @@ export class PermissionsService {
     constructor(
         @InjectRepository(Permission)
         private permissionsRepository: Repository<Permission>,
-    ){}
+    ) { }
 
     async create(createPermissionDto: CreatePermissionDto): Promise<Permission> {
         const permission = this.permissionsRepository.create(createPermissionDto);
@@ -22,7 +22,7 @@ export class PermissionsService {
     }
 
     async findOne(id: number) {
-        return this.permissionsRepository.findOne({where: {id}});
+        return this.permissionsRepository.findOne({ where: { id } });
     }
 
     async update(id: number, updatePermissionDto: UpdatePermissionDto) {

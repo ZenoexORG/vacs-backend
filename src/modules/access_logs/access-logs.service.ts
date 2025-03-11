@@ -10,7 +10,7 @@ export class AccessLogsService {
   constructor(
     @InjectRepository(AccessLog)
     private accessLogRepository: Repository<AccessLog>,
-  ) {}
+  ) { }
 
   create(createAccessLogDto: CreateAccessLogDto) {
     return this.accessLogRepository.save(createAccessLogDto);

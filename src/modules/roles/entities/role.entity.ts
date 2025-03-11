@@ -11,7 +11,7 @@ export class Role {
     @Column()
     name: string;
 
-    @Column({nullable: true})
+    @Column({ nullable: true })
     description?: string;
 
     @OneToMany(() => User, user => user.role)
