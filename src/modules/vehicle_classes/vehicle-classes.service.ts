@@ -4,6 +4,7 @@ import { Repository } from 'typeorm';
 import { VehicleClass } from './entities/vehicle-class.entity';
 import { CreateVehicleClassDto } from './dto/create-vehicle-class.dto';
 import { UpdateVehicleClassDto } from './dto/update-vehicle-class.dto';
+import { PaginationDto } from '../../shared/dtos/pagination.dto';
 
 @Injectable()
 export class VehicleClassesService {
@@ -16,8 +17,26 @@ export class VehicleClassesService {
         return this.vehicleClassRepository.save(createVehicleClassDto);
     }
 
-    findAll() {
-        return this.vehicleClassRepository.find();
+    async findAll(paginationDto: PaginationDto) {
+        const { page, limit } = paginationDto;
+        if (!page && !limit) {
+            return this.vehicleClassRepository.find()
+        }
+        return this.getPaginatedVehicleClasses(page, limit);
+    }
+
+    private async getPaginatedVehicleClasses(page, limit) {
+        const skippedItems = (page - 1) * limit;
+        const [vehicleClasses, total] = await this.vehicleClassRepository.findAndCount({ skip: skippedItems, take: limit });
+        return {
+            data: vehicleClasses,
+            meta: {
+                total,
+                page,
+                last_page: Math.ceil(total / limit),
+                per_page: limit,
+            }
+        }
     }
 
     findOne(id: number) {

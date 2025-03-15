@@ -1,10 +1,10 @@
-import { Controller, Get, Post, Body, Param, Delete, Patch } from '@nestjs/common';
+import { Controller, Get, Post, Body, Param, Delete, Patch, Query } from '@nestjs/common';
 import { CreateRoleDto } from './dto/create-role.dto';
 import { UpdateRoleDto } from './dto/update-role.dto';
 import { AssignPermissionsDto } from './dto/assign-permissions.dto';
 import { DeletePermissionsDto } from './dto/delete-permissions.dto';
 import { RolesService } from './roles.service';
-import { ApiTags, ApiOperation, ApiParam, ApiBody } from '@nestjs/swagger';
+import { ApiTags, ApiOperation, ApiParam, ApiBody, ApiQuery } from '@nestjs/swagger';
 
 @ApiTags('Roles')
 @Controller('roles')
@@ -19,10 +19,13 @@ export class RolesController {
     }
 
     @ApiOperation({ summary: 'Get all roles' })
+    @ApiQuery({ name: 'limit', description: 'Number of items per page', required: false, default: 10 })
+    @ApiQuery({ name: 'page', description: 'Page number', required: false, default: 1 })
     @Get()
-    findAll() {
-        return this.rolesService.findAll();
+    findAll(@Query() paginationDto) {
+        return this.rolesService.findAll(paginationDto);
     }
+    
 
     @ApiOperation({ summary: 'Get a role by id' })
     @ApiParam({ name: 'id', description: 'Role unique id', example: 1, type: Number })
@@ -46,7 +49,7 @@ export class RolesController {
     }
 
     @ApiOperation({ summary: 'Assign permissions to a role' })
-    @ApiParam({ name: 'id', description: 'Role unique id', example: 1, type: Number })
+    @ApiParam({ name: 'id', description: 'Role unique id', example: 1, type: Number })            
     @ApiBody({ type: AssignPermissionsDto })
     @Post(':id/permissions')
     assignPermissions(@Param('id') id: string, @Body() assignPermissionsDto: AssignPermissionsDto) {

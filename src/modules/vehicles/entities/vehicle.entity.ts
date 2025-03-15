@@ -13,7 +13,7 @@ export class Vehicle {
     class_id: number;
 
     @Column({ nullable: true })
-    user_id?: number;
+    user_id?: string;
 
     @Column({ nullable: true })
     soat?: string;

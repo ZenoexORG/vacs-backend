@@ -9,10 +9,10 @@ export class Incident {
     @Column()
     vehicle_id: string;
 
-    @CreateDateColumn({ type: 'timestamptz', default: () => 'CURRENT_TIMESTAMP' })
+    @CreateDateColumn({ type: 'timestamp', default: () => 'CURRENT_TIMESTAMP' })
     incident_date: Date;
 
-    @Column()
+    @Column({ type: 'timestamp', nullable: true })
     solution_date: Date;
 
     @Column()

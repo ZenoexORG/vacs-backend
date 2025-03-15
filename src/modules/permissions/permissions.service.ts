@@ -3,6 +3,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { CreatePermissionDto } from './dto/create-permission.dto';
 import { UpdatePermissionDto } from './dto/update-permission.dto';
+import { PaginationDto } from '../../shared/dtos/pagination.dto';
 import { Permission } from './entities/permission.entity';
 
 @Injectable()
@@ -17,8 +18,26 @@ export class PermissionsService {
         return this.permissionsRepository.save(permission);
     }
 
-    async findAll() {
-        return this.permissionsRepository.find();
+    async findAll(paginationDto: PaginationDto) {
+        const { page, limit } = paginationDto;
+        if (!page && !limit) {
+            return this.permissionsRepository.find();
+        }
+        return this.getPaginatedPermissions(page, limit);
+    }
+
+    private async getPaginatedPermissions(page, limit) {
+        const skippedItems = (page - 1) * limit;
+        const [permissions, total] = await this.permissionsRepository.findAndCount({ skip: skippedItems, take: limit });
+        return {
+            data: permissions,
+            meta: {
+                total,
+                page,
+                last_page: Math.ceil(total / limit),
+                per_page: limit,
+            }
+        }
     }
 
     async findOne(id: number) {

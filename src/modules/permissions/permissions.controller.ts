@@ -1,8 +1,8 @@
-import { Controller, Get, Post, Body, Param, Delete, Patch } from '@nestjs/common';
+import { Controller, Get, Post, Body, Param, Delete, Patch, Query } from '@nestjs/common';
 import { PermissionsService } from './permissions.service';
 import { CreatePermissionDto } from './dto/create-permission.dto';
 import { UpdatePermissionDto } from './dto/update-permission.dto';
-import { ApiTags, ApiOperation, ApiParam, ApiBody } from '@nestjs/swagger';
+import { ApiTags, ApiOperation, ApiParam, ApiBody, ApiQuery } from '@nestjs/swagger';
 
 @ApiTags('Permissions')
 @Controller('permissions')
@@ -17,10 +17,13 @@ export class PermissionsController {
     }
 
     @ApiOperation({ summary: 'Get all permissions' })
+    @ApiQuery({ name: 'limit', description: 'Number of items per page', required: false, default: 10 })
+    @ApiQuery({ name: 'page', description: 'Page number', required: false, default: 1 })
     @Get()
-    findAll() {
-        return this.permissionsService.findAll();
+    findAll(@Query() paginationDto) {
+        return this.permissionsService.findAll(paginationDto);
     }
+    
 
     @ApiOperation({ summary: 'Get a permission by id' })
     @ApiParam({ name: 'id', description: 'Permission unique id', example: 1, type: Number })

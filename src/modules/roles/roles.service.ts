@@ -5,6 +5,7 @@ import { CreateRoleDto } from './dto/create-role.dto';
 import { UpdateRoleDto } from './dto/update-role.dto';
 import { AssignPermissionsDto } from './dto/assign-permissions.dto';
 import { DeletePermissionsDto } from './dto/delete-permissions.dto';
+import { PaginationDto } from 'src/shared/dtos';
 import { Role } from './entities/role.entity';
 import { Permission } from '../permissions/entities/permission.entity';
 
@@ -24,8 +25,26 @@ export class RolesService {
     return this.rolesRepository.save(role);
   }
 
-  async findAll() {
-    return this.rolesRepository.find({ relations: ['users', 'employees', 'permissions'] });
+  async findAll(paginationDto: PaginationDto) {
+    const { page, limit } = paginationDto;
+    if (!page && !limit) {
+      return this.rolesRepository.find({ relations: ['users', 'employees', 'permissions'] });
+    }
+    return this.getPaginatedRoles(page, limit);
+  }
+
+  private async getPaginatedRoles(page, limit) {
+    const skippedItems = (page - 1) * limit;
+    const [roles, total] = await this.rolesRepository.findAndCount({ skip: skippedItems, take: limit, relations: ['users', 'employees', 'permissions'] });
+    return {
+      data: roles,
+      meta: {
+        total,
+        page,
+        last_page: Math.ceil(total / limit),
+        per_page: limit,
+      }
+    }
   }
 
   async findOne(id: number) {

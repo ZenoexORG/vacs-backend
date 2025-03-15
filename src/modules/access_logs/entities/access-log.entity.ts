@@ -6,10 +6,10 @@ export class AccessLog {
     @PrimaryGeneratedColumn()
     id: number;
 
-    @Column({ type: 'timestamptz', default: () => 'CURRENT_TIMESTAMP' })
+    @Column({ type: 'timestamp', default: () => 'CURRENT_TIMESTAMP' })
     entry_date: Date;
 
-    @Column({ type: 'timestamptz', nullable: true })
+    @Column({ type: 'timestamp', nullable: true })
     exit_date: Date;
 
     @Column()

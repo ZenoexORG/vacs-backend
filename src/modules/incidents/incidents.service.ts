@@ -4,6 +4,7 @@ import { Repository } from "typeorm";
 import { Incident } from "./entities/incident.entity";
 import { CreateIncidentDto } from "./dto/create-incident.dto";
 import { UpdateIncidentDto } from "./dto/update-incident.dto";
+import { PaginationDto } from "../../shared/dtos/pagination.dto";
 
 @Injectable()
 export class IncidentsService {
@@ -16,8 +17,26 @@ export class IncidentsService {
         return this.incidentRepository.save(createIncidentDto);
     }
 
-    findAll() {
-        return this.incidentRepository.find();
+    async findAll(paginationDto: PaginationDto) {
+        const { page, limit } = paginationDto;
+        if (!page && !limit) {
+            return this.incidentRepository.find();
+        }
+        return this.getPaginatedIncidents(page, limit);
+    }
+
+    private async getPaginatedIncidents(page, limit) {
+        const skippedItems = (page - 1) * limit;
+        const [incidents, total] = await this.incidentRepository.findAndCount({ skip: skippedItems, take: limit });
+        return {
+            data: incidents,
+            meta: {
+                total,
+                page,
+                last_page: Math.ceil(total / limit),
+                per_page: limit,
+            }
+        }
     }
 
     findOne(id: number) {

@@ -1,8 +1,8 @@
-import { Controller, Get, Post, Body, Param, Delete, Patch } from '@nestjs/common';
+import { Controller, Get, Post, Body, Param, Delete, Patch, Query } from '@nestjs/common';
 import { CreateIncidentDto } from './dto/create-incident.dto';
 import { UpdateIncidentDto } from './dto/update-incident.dto';
 import { IncidentsService } from './incidents.service';
-import { ApiTags, ApiOperation, ApiParam, ApiBody } from '@nestjs/swagger';
+import { ApiTags, ApiOperation, ApiParam, ApiBody, ApiQuery } from '@nestjs/swagger';
 
 @ApiTags('Incidents')
 @Controller('incidents')
@@ -17,10 +17,13 @@ export class IncidentsController {
     }
 
     @ApiOperation({ summary: 'Get all incidents' })
+    @ApiQuery({ name: 'limit', description: 'Number of items per page', required: false, default: 10 })
+    @ApiQuery({ name: 'page', description: 'Page number', required: false, default: 1 })
     @Get()
-    findAll() {
-        return this.incidentsService.findAll();
+    findAll(@Query() paginationDto) {
+        return this.incidentsService.findAll(paginationDto);
     }
+    
 
     @ApiOperation({ summary: 'Get an incident by id' })
     @ApiParam({ name: 'id', description: 'Incident unique id', example: 1 })

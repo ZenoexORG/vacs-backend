@@ -1,8 +1,9 @@
-import { Controller, Get, Post, Body, Param, Delete, Patch } from '@nestjs/common';
+import { Controller, Get, Post, Body, Param, Delete, Patch, Query } from '@nestjs/common';
 import { AccessLogsService } from './access-logs.service';
 import { CreateAccessLogDto } from './dto/create-access-log.dto';
 import { UpdateAccessLogDto } from './dto/update-access-log.dto';
-import { ApiTags, ApiOperation, ApiParam, ApiBody } from '@nestjs/swagger';
+import { PaginationDto } from '../../shared/dtos/pagination.dto';
+import { ApiTags, ApiOperation, ApiParam, ApiBody, ApiQuery } from '@nestjs/swagger';
 
 @ApiTags('Access Logs')
 @Controller('access-logs')
@@ -17,9 +18,11 @@ export class AccessLogsController {
     }
 
     @ApiOperation({ summary: 'Get all accesses' })
+    @ApiQuery({ name: 'limit', description: 'Number of items per page', required: false, default: 10 })
+    @ApiQuery({ name: 'page', description: 'Page number', required: false, default: 1 })
     @Get()
-    findAll() {
-        return this.accessLogsService.findAll();
+    findAll(@Query() paginationDto: PaginationDto) {
+        return this.accessLogsService.findAll(paginationDto);
     }
 
     @ApiOperation({ summary: 'Get an access by id' })

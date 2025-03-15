@@ -1,8 +1,9 @@
-import { Controller, Get, Post, Body, Param, Delete, Patch } from '@nestjs/common';
+import { Controller, Get, Post, Body, Param, Delete, Patch, Query } from '@nestjs/common';
 import { CreateVehicleDto } from './dto/create-vehicle.dto';
 import { UpdateVehicleDto } from './dto/update-vehicle.dto';
+import { PaginationDto } from '../../shared/dtos/pagination.dto';
 import { VehiclesService } from './vehicles.service';
-import { ApiTags, ApiOperation, ApiParam, ApiBody } from '@nestjs/swagger';
+import { ApiTags, ApiOperation, ApiParam, ApiBody, ApiQuery } from '@nestjs/swagger';
 
 @ApiTags('Vehicles')
 @Controller('vehicles')
@@ -17,9 +18,11 @@ export class VehiclesController {
     }
 
     @ApiOperation({ summary: 'Get all vehicles' })
+    @ApiQuery({ name: 'page', description: 'Page number', required: false, default: 1 })
+    @ApiQuery({ name: 'limit', description: 'Number of items per page', required: false, default: 10 })    
     @Get()
-    findAll() {
-        return this.vehiclesService.findAll();
+    findAll(@Query() paginationDto: PaginationDto) {
+        return this.vehiclesService.findAll(paginationDto);
     }
 
     @ApiOperation({ summary: 'Get a vehicle by id' })

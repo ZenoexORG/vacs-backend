@@ -3,6 +3,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { CreateEmployeeDto } from './dto/create-employee.dto';
 import { UpdateEmployeeDto } from './dto/update-employee.dto';
+import { PaginationDto } from '../../shared/dtos/pagination.dto';
 import { Employee } from './entities/employee.entity';
 
 @Injectable()
@@ -17,19 +18,37 @@ export class EmployeesService {
         return this.employeesRepository.save(employee);
     }
 
-    async findAll() {
-        return this.employeesRepository.find({ relations: ['role'] });
+    async findAll(paginationDto: PaginationDto) {
+        const { page, limit } = paginationDto;
+        if (!page && !limit) {
+            return this.employeesRepository.find({ relations: {role: {permissions: true}} });
+        }
+        return this.getPaginatedEmployees(page, limit);
     }
 
-    async findOne(id: number) {
-        return this.employeesRepository.findOne({ where: { id }, relations: ['role'] });
+    private async getPaginatedEmployees(page, limit) {
+        const skippedItems = (page - 1) * limit;
+        const [employees, total] = await this.employeesRepository.findAndCount({ skip: skippedItems, take: limit, relations: {role: {permissions:true}} });
+        return {
+            data: employees,
+            meta: {
+                total,
+                page,
+                last_page: Math.ceil(total / limit),
+                per_page: limit,
+            }
+        }
     }
 
-    async update(id: number, updateEmployeeDto: UpdateEmployeeDto) {
+    async findOne(id: string) {
+        return this.employeesRepository.findOne({ where: { id }, relations: {role:{permissions:true}} });
+    }
+
+    async update(id: string, updateEmployeeDto: UpdateEmployeeDto) {
         return this.employeesRepository.update(id, updateEmployeeDto);
     }
 
-    async remove(id: number) {
+    async remove(id: string) {
         return this.employeesRepository.delete(id);
     }
 
