@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, BadRequestException, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { VehicleClass } from './entities/vehicle-class.entity';
@@ -13,7 +13,11 @@ export class VehicleClassesService {
         private readonly vehicleClassRepository: Repository<VehicleClass>,
     ) { }
 
-    create(createVehicleClassDto: CreateVehicleClassDto) {
+    async create(createVehicleClassDto: CreateVehicleClassDto) {
+        const existingVehicleClass = await this.vehicleClassRepository.findOne({ where: { name: createVehicleClassDto.name } });
+        if (existingVehicleClass) {
+            throw new BadRequestException('Vehicle Class already exists');
+        }
         return this.vehicleClassRepository.save(createVehicleClassDto);
     }
 
@@ -39,15 +43,27 @@ export class VehicleClassesService {
         }
     }
 
-    findOne(id: number) {
-        return this.vehicleClassRepository.findOne({ where: { id } });
+    async findOne(id: number) {
+        const vehicleClass = await this.vehicleClassRepository.findOne({ where: { id } });
+        if (!vehicleClass) {
+            throw new NotFoundException('Vehicle Class not found');
+        }
+        return vehicleClass;
     }
 
-    update(id: number, updateVehicleClassDto: UpdateVehicleClassDto) {
+    async update(id: number, updateVehicleClassDto: UpdateVehicleClassDto) {
+        const vehicleClass = await this.vehicleClassRepository.findOne({ where: { id } });
+        if (!vehicleClass) {
+            throw new NotFoundException('Vehicle Class not found');
+        }
         return this.vehicleClassRepository.update(id, updateVehicleClassDto);
     }
 
-    remove(id: number) {
+    async remove(id: number) {
+        const vehicleClass = await this.vehicleClassRepository.findOne({ where: { id } });
+        if (!vehicleClass) {
+            throw new NotFoundException('Vehicle Class not found');
+        }
         return this.vehicleClassRepository.delete(id);
     }
 }

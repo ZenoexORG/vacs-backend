@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { CreatePermissionDto } from './dto/create-permission.dto';
@@ -14,8 +14,11 @@ export class PermissionsService {
     ) { }
 
     async create(createPermissionDto: CreatePermissionDto): Promise<Permission> {
-        const permission = this.permissionsRepository.create(createPermissionDto);
-        return this.permissionsRepository.save(permission);
+        const existingPermission = await this.permissionsRepository.findOne({ where: { name: createPermissionDto.name } });
+        if (existingPermission) {
+            throw new BadRequestException('Permission already exists');
+        }
+        return this.permissionsRepository.save(createPermissionDto);
     }
 
     async findAll(paginationDto: PaginationDto) {
@@ -41,14 +44,26 @@ export class PermissionsService {
     }
 
     async findOne(id: number) {
-        return this.permissionsRepository.findOne({ where: { id } });
-    }
+        const permission = await this.permissionsRepository.findOne({ where: { id } });
+        if (!permission) {
+            throw new NotFoundException('Permission not found');
+        }
+        return permission;
+    }    
 
     async update(id: number, updatePermissionDto: UpdatePermissionDto) {
+        const permission = await this.permissionsRepository.findOne({ where: { id } });
+        if (!permission) {
+            throw new NotFoundException('Permission not found');
+        }
         return this.permissionsRepository.update(id, updatePermissionDto);
     }
 
     async remove(id: number) {
-        return this.permissionsRepository.delete(id);
+        const permission = await this.permissionsRepository.findOne({ where: { id } });
+        if (!permission) {
+            throw new NotFoundException('Permission not found');
+        }
+        return this.permissionsRepository.delete(id);        
     }
 }

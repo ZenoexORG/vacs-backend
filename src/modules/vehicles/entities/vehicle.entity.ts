@@ -25,10 +25,4 @@ export class Vehicle {
     @OneToOne(() => VehicleClass, (vehicleClass) => vehicleClass.vehicle)
     @JoinColumn({ name: 'class_id' })
     class: VehicleClass;
-
-    @OneToMany(() => Incident, (incident) => incident.vehicle)
-    incidents: Incident[];
-
-    @OneToMany(() => AccessLog, (accessLog) => accessLog.vehicle)
-    access_logs: AccessLog[];
 }

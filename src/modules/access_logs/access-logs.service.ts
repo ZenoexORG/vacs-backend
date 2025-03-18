@@ -1,10 +1,10 @@
-import { Injectable } from '@nestjs/common';
-import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { Injectable, BadRequestException, NotFoundException } from '@nestjs/common';
 import { CreateAccessLogDto } from './dto/create-access-log.dto';
 import { UpdateAccessLogDto } from './dto/update-access-log.dto';
 import { PaginationDto } from '../../shared/dtos/pagination.dto';
 import { AccessLog } from './entities/access-log.entity';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository, IsNull } from 'typeorm';
 
 @Injectable()
 export class AccessLogsService {
@@ -13,7 +13,18 @@ export class AccessLogsService {
     private accessLogRepository: Repository<AccessLog>,
   ) { }
 
-  create(createAccessLogDto: CreateAccessLogDto) {
+  async create(createAccessLogDto: CreateAccessLogDto) {    
+    const existingOpenLog = await this.accessLogRepository.findOne({ where: { vehicle_id: createAccessLogDto.vehicle_id, exit_date: IsNull() }});
+
+    if (existingOpenLog) {
+      throw new BadRequestException('Vehicle already has an open access log');
+    }
+    
+    const entryDate = new Date(createAccessLogDto.entry_date);
+    if (isNaN(entryDate.getTime())) {
+      throw new BadRequestException('Invalid entry date');
+    }
+    
     return this.accessLogRepository.save(createAccessLogDto);
   }
 
@@ -39,15 +50,53 @@ export class AccessLogsService {
     }
   }
 
-  findOne(id: number) {
-    return this.accessLogRepository.findOne({ where: { id } });
+  async findOne(id: number) {
+    const accessLog = await this.accessLogRepository.findOne({ where: { id } });
+    if (!accessLog) {
+      throw new NotFoundException('Access log not found');
+    }
+    return accessLog;
   }
 
-  update(id: number, updateAccessLogDto: UpdateAccessLogDto) {
+  async update(id: number, updateAccessLogDto: UpdateAccessLogDto) {
+    const accessLog = await this.accessLogRepository.findOne({ where: { id } });
+    if (!accessLog) {
+      throw new NotFoundException('Access log not found');
+    }
     return this.accessLogRepository.update(id, updateAccessLogDto);
   }
 
-  remove(id: number) {
+  async remove(id: number) {
+    const accessLog = await this.accessLogRepository.findOne({ where: { id } });
+    if (!accessLog) {
+      throw new NotFoundException('Access log not found');
+    }
     return this.accessLogRepository.delete(id);
+  }
+
+  async registerEntryOrExit(vehicle_id: string, timestamp: string) {
+    const latestAccessLog = await this.accessLogRepository.findOne({ 
+      where: { vehicle_id },
+      order: { entry_date: 'DESC' }
+    });    
+
+    const newTimestamp = new Date(timestamp);
+
+    if (isNaN(newTimestamp.getTime())) {
+      throw new BadRequestException('Invalid date format');
+    }
+
+    if (latestAccessLog && !latestAccessLog.exit_date) {
+      const entryDate = new Date(latestAccessLog.entry_date);
+      if (newTimestamp < entryDate) {
+        throw new BadRequestException('Exit date cannot be before entry date');
+      }
+      return this.update(latestAccessLog.id, { exit_date: newTimestamp });
+    } else {
+      return this.accessLogRepository.save({ 
+        entry_date: newTimestamp, 
+        vehicle_id 
+      });    
+    }
   }
 }

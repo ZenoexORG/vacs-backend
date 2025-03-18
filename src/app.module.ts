@@ -11,6 +11,7 @@ import { VehiclesModule } from './modules/vehicles/vehicles.module';
 import { VehicleClassesModule } from './modules/vehicle_classes/vehicle-classes.module';
 import { IncidentsModule } from './modules/incidents/incidents.module';
 import { AccessLogsModule } from './modules/access_logs/access-logs.module';
+import { AuthModule } from './modules/auth/auth.module';
 
 
 @Module({
@@ -25,6 +26,7 @@ import { AccessLogsModule } from './modules/access_logs/access-logs.module';
     VehicleClassesModule,
     IncidentsModule,
     AccessLogsModule,
+    AuthModule,
   ],
   controllers: [AppController],
   providers: [AppService],

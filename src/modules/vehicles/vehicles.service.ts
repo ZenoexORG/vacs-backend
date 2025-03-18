@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Vehicle } from './entities/vehicle.entity';
@@ -13,7 +13,11 @@ export class VehiclesService {
         private readonly vehicleRepository: Repository<Vehicle>,
     ) { }
 
-    create(createVehicleDto: CreateVehicleDto) {
+    async create(createVehicleDto: CreateVehicleDto) {
+        const existingVehicle = await this.vehicleRepository.findOne({ where: { id: createVehicleDto.id } });
+        if (existingVehicle) {
+            throw new BadRequestException('Vehicle already exists');
+        }
         return this.vehicleRepository.save(createVehicleDto);
     }
 
@@ -39,15 +43,27 @@ export class VehiclesService {
         }
     }
 
-    findOne(id: string) {
-        return this.vehicleRepository.findOne({ where: { id } });
+    async findOne(id: string) {
+        const vehicle = await this.vehicleRepository.findOne({ where: { id } });
+        if (!vehicle) {
+            throw new NotFoundException('Vehicle not found');
+        }
+        return vehicle
     }
 
-    update(id: string, updateVehicleDto: UpdateVehicleDto) {
+    async update(id: string, updateVehicleDto: UpdateVehicleDto) {
+        const vehicle = await this.vehicleRepository.findOne({ where: { id } });
+        if (!vehicle) {
+            throw new NotFoundException('Vehicle not found');
+        }
         return this.vehicleRepository.update(id, updateVehicleDto);
     }
 
-    remove(id: string) {
-        return this.vehicleRepository.delete(id);
+    async remove(id: string) {
+        const vehicle = await this.vehicleRepository.findOne({ where: { id } });
+        if (!vehicle) {
+            throw new NotFoundException('Vehicle not found');
+        }
+        return this.vehicleRepository.remove(vehicle);
     }
 }

@@ -1,5 +1,4 @@
-import { Entity, Column, PrimaryGeneratedColumn, ManyToOne, CreateDateColumn, JoinColumn } from 'typeorm';
-import { Vehicle } from '../../vehicles/entities/vehicle.entity';
+import { Entity, Column, PrimaryGeneratedColumn, CreateDateColumn } from 'typeorm';
 
 @Entity('incidents')
 export class Incident {
@@ -17,8 +16,4 @@ export class Incident {
 
     @Column()
     comment: string;
-
-    @ManyToOne(() => Vehicle, (vehicle) => vehicle.incidents, { onDelete: 'SET NULL' })
-    @JoinColumn({ name: 'vehicle_id' })
-    vehicle: Vehicle;
 }

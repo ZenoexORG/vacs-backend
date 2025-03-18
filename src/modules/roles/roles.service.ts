@@ -1,13 +1,13 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
-import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
-import { CreateRoleDto } from './dto/create-role.dto';
-import { UpdateRoleDto } from './dto/update-role.dto';
+import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
+import { Permission } from '../permissions/entities/permission.entity';
 import { AssignPermissionsDto } from './dto/assign-permissions.dto';
 import { DeletePermissionsDto } from './dto/delete-permissions.dto';
+import { CreateRoleDto } from './dto/create-role.dto';
+import { UpdateRoleDto } from './dto/update-role.dto';
+import { InjectRepository } from '@nestjs/typeorm';
 import { PaginationDto } from 'src/shared/dtos';
 import { Role } from './entities/role.entity';
-import { Permission } from '../permissions/entities/permission.entity';
+import { Repository, In } from 'typeorm';
 
 
 @Injectable()
@@ -21,8 +21,11 @@ export class RolesService {
   ) { }
 
   async create(createRoleDto: CreateRoleDto): Promise<Role> {
-    const role = this.rolesRepository.create(createRoleDto);
-    return this.rolesRepository.save(role);
+    const existingRole = await this.rolesRepository.findOne({ where: { name: createRoleDto.name } });
+    if (existingRole) {
+      throw new BadRequestException('Role already exists');
+    }
+    return this.rolesRepository.save(createRoleDto);
   }
 
   async findAll(paginationDto: PaginationDto) {
@@ -48,35 +51,43 @@ export class RolesService {
   }
 
   async findOne(id: number) {
-    return this.rolesRepository.findOne({ where: { id }, relations: ['users', 'employees', 'permissions'] });
+    const role = await this.rolesRepository.findOne({ where: { id }, relations: ['users', 'employees', 'permissions'] });
+    if (!role) {
+      throw new NotFoundException('Role not found');
+    }
+    return role;
   }
 
   async update(id: number, updateRoleDto: UpdateRoleDto) {
+    const role = await this.rolesRepository.findOne({ where: { id } });
+    if (!role) {
+      throw new NotFoundException('Role not found');
+    }
     return this.rolesRepository.update(id, updateRoleDto);
   }
 
   async remove(id: number) {
+    const role = await this.rolesRepository.findOne({ where: { id } });
+    if (!role) {
+      throw new NotFoundException('Role not found');
+    }
     return this.rolesRepository.delete(id);
   }
 
   async assignPermissions(id: number, assignPermissionsDto: AssignPermissionsDto) {
     const role = await this.rolesRepository.findOne({ where: { id }, relations: ['permissions'] });
-    if (!role) throw new NotFoundException('Role not found');
-
-    const permissions = await this.permissionsRepository.findByIds(assignPermissionsDto.permissionIds);
+    if (!role) throw new NotFoundException('Role not found');    
+    const permissions = await this.permissionsRepository.find({ where: { id: In(assignPermissionsDto.permissionIds) }});
     role.permissions = [...(role.permissions || []), ...permissions];
-
     return this.rolesRepository.save(role);
   }
 
   async removePermissions(id: number, deletePermissionsDto: DeletePermissionsDto) {
     const role = await this.rolesRepository.findOne({ where: { id }, relations: ['permissions'] });
     if (!role) throw new NotFoundException('Role not found');
-
     role.permissions = (role.permissions ?? []).filter(
       permission => !deletePermissionsDto.permissionIds.includes(permission.id)
     );
-
     return this.rolesRepository.save(role);
   }
 }

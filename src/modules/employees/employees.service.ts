@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, BadRequestException, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { CreateEmployeeDto } from './dto/create-employee.dto';
@@ -14,8 +14,20 @@ export class EmployeesService {
     ) { }
 
     async create(createEmployeeDto: CreateEmployeeDto): Promise<Employee> {
-        const employee = this.employeesRepository.create(createEmployeeDto);
-        return this.employeesRepository.save(employee);
+        const existingEmployee = await this.employeesRepository.findOne({ 
+            where: [
+            { username: createEmployeeDto.username },
+            { id: createEmployeeDto.id }
+            ] 
+        });        
+        if (existingEmployee) {
+            throw new BadRequestException(
+            existingEmployee.username === createEmployeeDto.username 
+                ? 'Username already exists' 
+                : 'ID already exists'
+            );
+        }
+        return this.employeesRepository.save(createEmployeeDto);
     }
 
     async findAll(paginationDto: PaginationDto) {
@@ -40,19 +52,35 @@ export class EmployeesService {
         }
     }
 
-    async findOne(id: string) {
-        return this.employeesRepository.findOne({ where: { id }, relations: {role:{permissions:true}} });
+    async findOne(id: string) {        
+        const employee = await this.employeesRepository.findOne({ where: { id }, relations: {role:{permissions:true}} });
+        if (!employee) {
+            throw new NotFoundException(`Employee with ID "${id}" not found`);
+        }
+        return employee;
     }
 
     async update(id: string, updateEmployeeDto: UpdateEmployeeDto) {
+        const employee = await this.employeesRepository.findOne({ where: { id } });
+        if (!employee) {
+            throw new NotFoundException('Employee not found');
+        }
         return this.employeesRepository.update(id, updateEmployeeDto);
     }
 
     async remove(id: string) {
+        const employee = await this.employeesRepository.findOne({ where: { id } });
+        if (!employee) {
+            throw new NotFoundException('Employee not found');
+        }
         return this.employeesRepository.delete(id);
     }
 
     async findByUsername(username: string) {
-        return this.employeesRepository.findOne({ where: { username } });
+        const employee = await this.employeesRepository.findOne({ where: { username }, relations: {role:{permissions:true}} });
+        if (!employee) {
+            throw new NotFoundException(`Employee with username "${username}" not found`);
+        }
+        return employee;
     }
 }

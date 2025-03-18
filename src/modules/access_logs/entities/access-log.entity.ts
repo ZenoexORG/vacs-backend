@@ -1,5 +1,4 @@
-import { Entity, Column, PrimaryGeneratedColumn, ManyToOne, JoinColumn } from 'typeorm';
-import { Vehicle } from '../../vehicles/entities/vehicle.entity';
+import { Entity, Column, PrimaryGeneratedColumn, } from 'typeorm';
 
 @Entity('access_logs')
 export class AccessLog {
@@ -10,12 +9,8 @@ export class AccessLog {
     entry_date: Date;
 
     @Column({ type: 'timestamp', nullable: true })
-    exit_date: Date;
+    exit_date: Date | null;
 
     @Column()
-    vehicle_id: string;
-
-    @ManyToOne(() => Vehicle, vehicle => vehicle.access_logs)
-    @JoinColumn({ name: 'vehicle_id' })
-    vehicle: Vehicle;
+    vehicle_id: string;    
 }

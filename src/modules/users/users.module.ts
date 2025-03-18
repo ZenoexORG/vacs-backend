@@ -10,6 +10,7 @@ import { Vehicle } from '../vehicles/entities/vehicle.entity';
   imports: [TypeOrmModule.forFeature([User, Role, Vehicle])],
   controllers: [UsersController],
   providers: [UsersService],
+  exports: [UsersService]
 })
 
 export class UsersModule { }

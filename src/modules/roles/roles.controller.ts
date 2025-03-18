@@ -1,10 +1,13 @@
-import { Controller, Get, Post, Body, Param, Delete, Patch, Query } from '@nestjs/common';
+import { Controller, Get, Post, Body, Param, Delete, Patch, Query, UseGuards } from '@nestjs/common';
+import { ApiTags, ApiOperation, ApiParam, ApiBody, ApiQuery, ApiBearerAuth } from '@nestjs/swagger';
 import { CreateRoleDto } from './dto/create-role.dto';
 import { UpdateRoleDto } from './dto/update-role.dto';
 import { AssignPermissionsDto } from './dto/assign-permissions.dto';
 import { DeletePermissionsDto } from './dto/delete-permissions.dto';
 import { RolesService } from './roles.service';
-import { ApiTags, ApiOperation, ApiParam, ApiBody, ApiQuery } from '@nestjs/swagger';
+import { AuthGuard } from '@nestjs/passport';
+import { PermissionsGuard } from '../auth/permissions.guard';
+import { Permissions } from 'src/shared/decorators/permissions.decorator';
 
 @ApiTags('Roles')
 @Controller('roles')
@@ -14,6 +17,9 @@ export class RolesController {
     @ApiOperation({ summary: 'Create a role' })
     @ApiBody({ type: CreateRoleDto })
     @Post()
+    @ApiBearerAuth()
+    @UseGuards(AuthGuard('jwt'), PermissionsGuard)
+    @Permissions('create:roles')
     create(@Body() createRoleDto: CreateRoleDto) {
         return this.rolesService.create(createRoleDto);
     }
@@ -22,6 +28,9 @@ export class RolesController {
     @ApiQuery({ name: 'limit', description: 'Number of items per page', required: false, default: 10 })
     @ApiQuery({ name: 'page', description: 'Page number', required: false, default: 1 })
     @Get()
+    @ApiBearerAuth()
+    @UseGuards(AuthGuard('jwt'), PermissionsGuard)
+    @Permissions('read:roles')
     findAll(@Query() paginationDto) {
         return this.rolesService.findAll(paginationDto);
     }
@@ -30,6 +39,9 @@ export class RolesController {
     @ApiOperation({ summary: 'Get a role by id' })
     @ApiParam({ name: 'id', description: 'Role unique id', example: 1, type: Number })
     @Get(':id')
+    @ApiBearerAuth()
+    @UseGuards(AuthGuard('jwt'), PermissionsGuard)
+    @Permissions('read:roles')
     findOne(@Param('id') id: string) {
         return this.rolesService.findOne(+id);
     }
@@ -37,6 +49,9 @@ export class RolesController {
     @ApiOperation({ summary: 'Update a role' })
     @ApiParam({ name: 'id', description: 'Role unique id', example: 1, type: Number })
     @Patch(':id')
+    @ApiBearerAuth()
+    @UseGuards(AuthGuard('jwt'), PermissionsGuard)
+    @Permissions('update:roles')
     update(@Param('id') id: string, @Body() updateRoleDto: UpdateRoleDto) {
         return this.rolesService.update(+id, updateRoleDto);
     }
@@ -44,6 +59,9 @@ export class RolesController {
     @ApiOperation({ summary: 'Delete a role' })
     @ApiParam({ name: 'id', description: 'Role unique id', example: 1, type: Number })
     @Delete(':id')
+    @ApiBearerAuth()
+    @UseGuards(AuthGuard('jwt'), PermissionsGuard)
+    @Permissions('delete:roles')
     remove(@Param('id') id: string) {
         return this.rolesService.remove(+id);
     }
@@ -52,6 +70,9 @@ export class RolesController {
     @ApiParam({ name: 'id', description: 'Role unique id', example: 1, type: Number })            
     @ApiBody({ type: AssignPermissionsDto })
     @Post(':id/permissions')
+    @ApiBearerAuth()
+    @UseGuards(AuthGuard('jwt'), PermissionsGuard)
+    @Permissions('assign:permissions')
     assignPermissions(@Param('id') id: string, @Body() assignPermissionsDto: AssignPermissionsDto) {
         return this.rolesService.assignPermissions(+id, assignPermissionsDto);
     }
@@ -60,6 +81,9 @@ export class RolesController {
     @ApiParam({ name: 'id', description: 'Role unique id', example: 1, type: Number })
     @ApiBody({ type: AssignPermissionsDto })
     @Delete(':id/permissions')
+    @ApiBearerAuth()
+    @UseGuards(AuthGuard('jwt'), PermissionsGuard)
+    @Permissions('unassign:permissions')
     removePermissions(@Param('id') id: string, @Body() deletePermissionsDto: DeletePermissionsDto) {
         return this.rolesService.removePermissions(+id, deletePermissionsDto);
     }

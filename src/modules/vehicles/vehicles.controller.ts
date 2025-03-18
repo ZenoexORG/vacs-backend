@@ -1,9 +1,12 @@
-import { Controller, Get, Post, Body, Param, Delete, Patch, Query } from '@nestjs/common';
+import { Controller, Get, Post, Body, Param, Delete, Patch, Query, UseGuards } from '@nestjs/common';
+import { ApiTags, ApiOperation, ApiParam, ApiBody, ApiQuery, ApiBearerAuth } from '@nestjs/swagger';
 import { CreateVehicleDto } from './dto/create-vehicle.dto';
 import { UpdateVehicleDto } from './dto/update-vehicle.dto';
 import { PaginationDto } from '../../shared/dtos/pagination.dto';
 import { VehiclesService } from './vehicles.service';
-import { ApiTags, ApiOperation, ApiParam, ApiBody, ApiQuery } from '@nestjs/swagger';
+import { AuthGuard } from '@nestjs/passport';
+import { PermissionsGuard } from '../auth/permissions.guard';
+import { Permissions } from 'src/shared/decorators/permissions.decorator';
 
 @ApiTags('Vehicles')
 @Controller('vehicles')
@@ -13,6 +16,9 @@ export class VehiclesController {
     @ApiOperation({ summary: 'Create a vehicle' })
     @ApiBody({ type: CreateVehicleDto })
     @Post()
+    @ApiBearerAuth()
+    @UseGuards(AuthGuard('jwt'), PermissionsGuard)
+    @Permissions('create:vehicles')
     create(@Body() createVehicleDto: CreateVehicleDto) {
         return this.vehiclesService.create(createVehicleDto);
     }
@@ -21,6 +27,9 @@ export class VehiclesController {
     @ApiQuery({ name: 'page', description: 'Page number', required: false, default: 1 })
     @ApiQuery({ name: 'limit', description: 'Number of items per page', required: false, default: 10 })    
     @Get()
+    @ApiBearerAuth()
+    @UseGuards(AuthGuard('jwt'), PermissionsGuard)
+    @Permissions('read:vehicles')
     findAll(@Query() paginationDto: PaginationDto) {
         return this.vehiclesService.findAll(paginationDto);
     }
@@ -28,6 +37,9 @@ export class VehiclesController {
     @ApiOperation({ summary: 'Get a vehicle by id' })
     @ApiParam({ name: 'id', description: 'Vehicle unique id', example: 1 })
     @Get(':id')
+    @ApiBearerAuth()
+    @UseGuards(AuthGuard('jwt'), PermissionsGuard)
+    @Permissions('read:vehicles')
     findOne(@Param('id') id: string) {
         return this.vehiclesService.findOne(id);
     }
@@ -35,6 +47,9 @@ export class VehiclesController {
     @ApiOperation({ summary: 'Update a vehicle' })
     @ApiParam({ name: 'id', description: 'Vehicle unique id', example: 1 })
     @Patch(':id')
+    @ApiBearerAuth()
+    @UseGuards(AuthGuard('jwt'), PermissionsGuard)
+    @Permissions('update:vehicles')
     update(@Param('id') id: string, @Body() updateVehicleDto: UpdateVehicleDto) {
         return this.vehiclesService.update(id, updateVehicleDto);
     }
@@ -42,6 +57,9 @@ export class VehiclesController {
     @ApiOperation({ summary: 'Delete a vehicle' })
     @ApiParam({ name: 'id', description: 'Vehicle unique id', example: 1 })
     @Delete(':id')
+    @ApiBearerAuth()
+    @UseGuards(AuthGuard('jwt'), PermissionsGuard)
+    @Permissions('delete:vehicles')
     remove(@Param('id') id: string) {
         return this.vehiclesService.remove(id);
     }

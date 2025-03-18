@@ -1,4 +1,4 @@
-import { Injectable } from "@nestjs/common";
+import { Injectable, NotFoundException } from "@nestjs/common";
 import { InjectRepository } from "@nestjs/typeorm";
 import { Repository } from "typeorm";
 import { Incident } from "./entities/incident.entity";
@@ -13,7 +13,7 @@ export class IncidentsService {
         private readonly incidentRepository: Repository<Incident>,
     ) { }
 
-    create(createIncidentDto: CreateIncidentDto) {
+    create(createIncidentDto: CreateIncidentDto) {        
         return this.incidentRepository.save(createIncidentDto);
     }
 
@@ -39,15 +39,27 @@ export class IncidentsService {
         }
     }
 
-    findOne(id: number) {
-        return this.incidentRepository.findOne({ where: { id } });
+    async findOne(id: number) {
+        const incident = await this.incidentRepository.findOne({ where: { id } });
+        if (!incident) {
+            throw new NotFoundException('Incident not found');
+        }
+        return incident;
     }
 
-    update(id: number, updateIncidentDto: UpdateIncidentDto) {
+    async update(id: number, updateIncidentDto: UpdateIncidentDto) {
+        const incident = await this.incidentRepository.findOne({ where: { id } });
+        if (!incident) {
+            throw new NotFoundException('Incident not found');
+        }
         return this.incidentRepository.update(id, updateIncidentDto);
     }
 
-    remove(id: number) {
+    async remove(id: number) {
+        const incident = await this.incidentRepository.findOne({ where: { id } });
+        if (!incident) {
+            throw new NotFoundException('Incident not found');
+        }
         return this.incidentRepository.delete(id);
     }
 }
