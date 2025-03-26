@@ -5,6 +5,7 @@ import { PaginationDto } from '../../shared/dtos/pagination.dto';
 import { AccessLog } from './entities/access-log.entity';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, IsNull } from 'typeorm';
+import { getMonthRange } from '../../shared/utils/date.utils';
 
 @Injectable()
 export class AccessLogsService {
@@ -99,4 +100,20 @@ export class AccessLogsService {
       });    
     }
   }
+
+  async getVehicleEntriesByDay(month: number, year?: number) {
+    const { start, end } = getMonthRange(month, year);
+    const result = await this.accessLogRepository
+      .createQueryBuilder('log')
+      .select([
+        "TO_CHAR(log.entry_date, 'MON DD') AS date",
+        "COUNT(log.id) AS total"
+      ])
+      .where('log.entry_date BETWEEN :start AND :end', { start, end })
+      .groupBy('date')
+      .orderBy('date')
+      .getRawMany();
+    
+    return result.map(({ date, total }) => ({ date, total: parseInt(total) }));
+  }  
 }

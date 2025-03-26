@@ -12,21 +12,23 @@ import { VehicleClassesModule } from './modules/vehicle_classes/vehicle-classes.
 import { IncidentsModule } from './modules/incidents/incidents.module';
 import { AccessLogsModule } from './modules/access_logs/access-logs.module';
 import { AuthModule } from './modules/auth/auth.module';
+import { DashboardModule } from './modules/dashboard/dashboard.module';
 
 
 @Module({
   imports: [
     ConfigModule.forRoot({ isGlobal: true }),
     DatabaseModule,
-    UsersModule,
+    AuthModule,
     EmployeesModule,
+    UsersModule,
     RolesModule,
     PermissionsModule,
     VehiclesModule,
     VehicleClassesModule,
     IncidentsModule,
-    AccessLogsModule,
-    AuthModule,
+    AccessLogsModule,    
+    DashboardModule
   ],
   controllers: [AppController],
   providers: [AppService],

@@ -18,6 +18,9 @@ export class Vehicle {
     @Column({ nullable: true })
     soat?: string;
 
+    @Column()
+    created_at: Date;
+
     @ManyToOne(() => User, (user) => user.vehicles, { nullable: true, onDelete: 'SET NULL' })
     @JoinColumn({ name: 'user_id' })
     user: User;

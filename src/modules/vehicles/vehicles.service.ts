@@ -1,10 +1,11 @@
 import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { Repository, Between } from 'typeorm';
 import { Vehicle } from './entities/vehicle.entity';
 import { CreateVehicleDto } from './dto/create-vehicle.dto';
 import { UpdateVehicleDto } from './dto/update-vehicle.dto';
 import { PaginationDto } from '../../shared/dtos/pagination.dto';
+import { getMonthRange } from 'src/shared/utils/date.utils';
 
 @Injectable()
 export class VehiclesService {
@@ -65,5 +66,10 @@ export class VehiclesService {
             throw new NotFoundException('Vehicle not found');
         }
         return this.vehicleRepository.remove(vehicle);
+    }
+
+    async countVehicles(month: number): Promise<number> {
+        const { start, end } = getMonthRange(month);
+        return this.vehicleRepository.count({where: {created_at: Between(start, end)}});
     }
 }

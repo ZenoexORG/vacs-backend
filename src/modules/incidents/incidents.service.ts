@@ -1,10 +1,11 @@
 import { Injectable, NotFoundException } from "@nestjs/common";
 import { InjectRepository } from "@nestjs/typeorm";
-import { Repository } from "typeorm";
+import { Repository, Between } from "typeorm";
 import { Incident } from "./entities/incident.entity";
 import { CreateIncidentDto } from "./dto/create-incident.dto";
 import { UpdateIncidentDto } from "./dto/update-incident.dto";
 import { PaginationDto } from "../../shared/dtos/pagination.dto";
+import { getMonthRange } from "../../shared/utils/date.utils";
 
 @Injectable()
 export class IncidentsService {
@@ -61,5 +62,10 @@ export class IncidentsService {
             throw new NotFoundException('Incident not found');
         }
         return this.incidentRepository.delete(id);
+    }
+
+    async countIncidents(month: number, year?: number) {
+        const { start, end } = getMonthRange(month, year);
+        return this.incidentRepository.count({ where: { incident_date: Between(start, end) } });
     }
 }

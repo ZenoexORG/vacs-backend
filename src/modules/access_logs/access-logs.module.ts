@@ -8,5 +8,6 @@ import { AccessLog } from './entities/access-log.entity';
   imports: [TypeOrmModule.forFeature([AccessLog])],
   controllers: [AccessLogsController],
   providers: [AccessLogsService],
+  exports: [AccessLogsService]
 })
 export class AccessLogsModule { }
