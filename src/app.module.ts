@@ -14,7 +14,6 @@ import { AccessLogsModule } from './modules/access_logs/access-logs.module';
 import { AuthModule } from './modules/auth/auth.module';
 import { DashboardModule } from './modules/dashboard/dashboard.module';
 
-
 @Module({
   imports: [
     ConfigModule.forRoot({ isGlobal: true }),
@@ -27,10 +26,10 @@ import { DashboardModule } from './modules/dashboard/dashboard.module';
     VehiclesModule,
     VehicleClassesModule,
     IncidentsModule,
-    AccessLogsModule,    
-    DashboardModule
+    AccessLogsModule,
+    DashboardModule,
   ],
   controllers: [AppController],
   providers: [AppService],
 })
-export class AppModule { }
+export class AppModule {}

@@ -10,7 +10,7 @@ export class AppService {
       version: '1.0.0',
       status: isRunning ? 'running' : 'stopped',
       uptime: process.uptime(),
-      documentation: '/docs'
+      documentation: '/docs',
     };
   }
 }

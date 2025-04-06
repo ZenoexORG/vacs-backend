@@ -49,6 +49,7 @@ $ npm run test:cov
 ## API Documentation
 
 Once the application is running, you can access the Swagger API documentation at:
+
 ```
 http://{host}:3000/docs
 ```
@@ -58,6 +59,7 @@ Replace `{host}` with your server's hostname or IP address.
 ## Environment Variables
 
 Make sure to set up the following environment variables:
+
 ```
 DB_HOST=
 DB_PORT=

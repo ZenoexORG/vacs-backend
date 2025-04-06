@@ -9,6 +9,6 @@ import { AccessLogsModule } from '../access_logs/access-logs.module';
   imports: [IncidentsModule, VehiclesModule, AccessLogsModule],
   controllers: [DashboardController],
   providers: [DashboardService],
-  exports: [DashboardService]
+  exports: [DashboardService],
 })
 export class DashboardModule {}

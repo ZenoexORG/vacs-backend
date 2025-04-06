@@ -1,54 +1,73 @@
-import { Injectable, BadRequestException, NotFoundException } from '@nestjs/common';
+import {
+  Injectable,
+  BadRequestException,
+  NotFoundException,
+} from '@nestjs/common';
 import { CreateAccessLogDto } from './dto/create-access-log.dto';
 import { UpdateAccessLogDto } from './dto/update-access-log.dto';
 import { PaginationDto } from '../../shared/dtos/pagination.dto';
+import { getMonthRange } from '../../shared/utils/date.utils';
+import { Vehicle } from '../vehicles/entities/vehicle.entity';
 import { AccessLog } from './entities/access-log.entity';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, IsNull } from 'typeorm';
-import { getMonthRange } from '../../shared/utils/date.utils';
+import { Repository, IsNull, In } from 'typeorm';
 
 @Injectable()
 export class AccessLogsService {
   constructor(
     @InjectRepository(AccessLog)
     private accessLogRepository: Repository<AccessLog>,
-  ) { }
+    @InjectRepository(Vehicle)
+    private vehicleRepository: Repository<Vehicle>,
+  ) {}
 
-  async create(createAccessLogDto: CreateAccessLogDto) {    
-    const existingOpenLog = await this.accessLogRepository.findOne({ where: { vehicle_id: createAccessLogDto.vehicle_id, exit_date: IsNull() }});
+  async create(createAccessLogDto: CreateAccessLogDto) {
+    const existingOpenLog = await this.accessLogRepository.findOne({
+      where: { vehicle_id: createAccessLogDto.vehicle_id, exit_date: IsNull() },
+    });
 
     if (existingOpenLog) {
       throw new BadRequestException('Vehicle already has an open access log');
     }
-    
+
     const entryDate = new Date(createAccessLogDto.entry_date);
     if (isNaN(entryDate.getTime())) {
       throw new BadRequestException('Invalid entry date');
     }
-    
+
     return this.accessLogRepository.save(createAccessLogDto);
   }
 
   async findAll(paginationDto: PaginationDto) {
     const { page, limit } = paginationDto;
     if (!page && !limit) {
-      return this.accessLogRepository.find();
+      const accessLogs = await this.accessLogRepository.find();
+      const vehicleIds = [...new Set(accessLogs.map((log) => log.vehicle_id))];
+      const vehicles = await this.vehicleRepository.find({
+        where: { id: In(vehicleIds) },
+        relations: ['class'],
+        select: ['id', 'class', 'user_id'],
+      });
+      const vehicleMap = new Map(
+        vehicles.map((vehicle) => [vehicle.id, vehicle]),
+      );
+      const enrichedLogs = accessLogs.map((log) => {
+        const vehicle = vehicleMap.get(log.vehicle_id);
+        return {
+          ...log,
+          type: vehicle?.class?.name || 'Unknown',
+          user_id: vehicle?.user_id || null,
+        };
+      });
+      return {
+        data: enrichedLogs,
+        meta: {
+          page: 1,
+          total_pages: 1,
+        },
+      };
     }
     return this.getPaginatedAccessLogs(page, limit);
-  }
-
-  private async getPaginatedAccessLogs(page, limit) {
-    const skippedItems = (page - 1) * limit;
-    const [accessLogs, total] = await this.accessLogRepository.findAndCount({ skip: skippedItems, take: limit });
-    return {
-      data: accessLogs,
-      meta: {
-        total,
-        page,
-        last_page: Math.ceil(total / limit),
-        per_page: limit,
-      }
-    }
   }
 
   async findOne(id: number) {
@@ -76,10 +95,10 @@ export class AccessLogsService {
   }
 
   async registerEntryOrExit(vehicle_id: string, timestamp: string) {
-    const latestAccessLog = await this.accessLogRepository.findOne({ 
+    const latestAccessLog = await this.accessLogRepository.findOne({
       where: { vehicle_id },
-      order: { entry_date: 'DESC' }
-    });    
+      order: { entry_date: 'DESC' },
+    });
 
     const newTimestamp = new Date(timestamp);
 
@@ -94,10 +113,10 @@ export class AccessLogsService {
       }
       return this.update(latestAccessLog.id, { exit_date: newTimestamp });
     } else {
-      return this.accessLogRepository.save({ 
-        entry_date: newTimestamp, 
-        vehicle_id 
-      });    
+      return this.accessLogRepository.save({
+        entry_date: newTimestamp,
+        vehicle_id,
+      });
     }
   }
 
@@ -107,13 +126,48 @@ export class AccessLogsService {
       .createQueryBuilder('log')
       .select([
         "TO_CHAR(log.entry_date, 'MON DD') AS date",
-        "COUNT(log.id) AS total"
+        'COUNT(log.id) AS total',
       ])
       .where('log.entry_date BETWEEN :start AND :end', { start, end })
       .groupBy('date')
       .orderBy('date')
       .getRawMany();
-    
+
     return result.map(({ date, total }) => ({ date, total: parseInt(total) }));
-  }  
+  }
+
+  private async getPaginatedAccessLogs(page, limit) {
+    const skippedItems = (page - 1) * limit;
+    const [accessLogs, total] = await this.accessLogRepository.findAndCount({
+      skip: skippedItems,
+      take: limit,
+    });
+    const vehicleIds = [...new Set(accessLogs.map((log) => log.vehicle_id))];
+    const vehicles = await this.vehicleRepository.find({
+      where: { id: In(vehicleIds) },
+      relations: ['class'],
+      select: ['id', 'class', 'user_id'],
+    });
+    const vehicleMap = new Map(
+      vehicles.map((vehicle) => [vehicle.id, vehicle]),
+    );
+
+    const enrichedLogs = accessLogs.map((log) => {
+      const vehicle = vehicleMap.get(log.vehicle_id);
+      return {
+        ...log,
+        type: vehicle?.class?.name || 'Unknown',
+        user_id: vehicle?.user_id || null,
+      };
+    });
+
+    return {
+      data: enrichedLogs,
+      meta: {
+        page: +page,
+        total_pages: Math.ceil(total / limit),
+      },
+    };
+  }
+  1;
 }

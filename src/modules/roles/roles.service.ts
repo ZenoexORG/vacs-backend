@@ -1,4 +1,8 @@
-import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  BadRequestException,
+} from '@nestjs/common';
 import { Permission } from '../permissions/entities/permission.entity';
 import { AssignPermissionsDto } from './dto/assign-permissions.dto';
 import { DeletePermissionsDto } from './dto/delete-permissions.dto';
@@ -9,7 +13,6 @@ import { PaginationDto } from 'src/shared/dtos';
 import { Role } from './entities/role.entity';
 import { Repository, In } from 'typeorm';
 
-
 @Injectable()
 export class RolesService {
   constructor(
@@ -18,10 +21,12 @@ export class RolesService {
 
     @InjectRepository(Permission)
     private permissionsRepository: Repository<Permission>,
-  ) { }
+  ) {}
 
   async create(createRoleDto: CreateRoleDto): Promise<Role> {
-    const existingRole = await this.rolesRepository.findOne({ where: { name: createRoleDto.name } });
+    const existingRole = await this.rolesRepository.findOne({
+      where: { name: createRoleDto.name },
+    });
     if (existingRole) {
       throw new BadRequestException('Role already exists');
     }
@@ -31,27 +36,29 @@ export class RolesService {
   async findAll(paginationDto: PaginationDto) {
     const { page, limit } = paginationDto;
     if (!page && !limit) {
-      return this.rolesRepository.find({ relations: ['users', 'employees', 'permissions'] });
+      const roles = await this.rolesRepository.find({
+        relations: ['permissions'],
+      });
+      const formattedRoles = roles.map((role) => ({
+        ...role,
+        permissions: this.formatPermissions(role.permissions ?? []),
+      }));
+      return {
+        data: formattedRoles,
+        meta: {
+          page: 1,
+          total_pages: 1,
+        },
+      };
     }
     return this.getPaginatedRoles(page, limit);
   }
 
-  private async getPaginatedRoles(page, limit) {
-    const skippedItems = (page - 1) * limit;
-    const [roles, total] = await this.rolesRepository.findAndCount({ skip: skippedItems, take: limit, relations: ['users', 'employees', 'permissions'] });
-    return {
-      data: roles,
-      meta: {
-        total,
-        page,
-        last_page: Math.ceil(total / limit),
-        per_page: limit,
-      }
-    }
-  }
-
   async findOne(id: number) {
-    const role = await this.rolesRepository.findOne({ where: { id }, relations: ['users', 'employees', 'permissions'] });
+    const role = await this.rolesRepository.findOne({
+      where: { id },
+      relations: ['users', 'employees', 'permissions'],
+    });
     if (!role) {
       throw new NotFoundException('Role not found');
     }
@@ -74,20 +81,79 @@ export class RolesService {
     return this.rolesRepository.delete(id);
   }
 
-  async assignPermissions(id: number, assignPermissionsDto: AssignPermissionsDto) {
-    const role = await this.rolesRepository.findOne({ where: { id }, relations: ['permissions'] });
-    if (!role) throw new NotFoundException('Role not found');    
-    const permissions = await this.permissionsRepository.find({ where: { id: In(assignPermissionsDto.permissionIds) }});
+  async assignPermissions(
+    id: number,
+    assignPermissionsDto: AssignPermissionsDto,
+  ) {
+    const role = await this.rolesRepository.findOne({
+      where: { id },
+      relations: ['permissions'],
+    });
+    if (!role) throw new NotFoundException('Role not found');
+    const permissions = await this.permissionsRepository.find({
+      where: { id: In(assignPermissionsDto.permissionIds) },
+    });
     role.permissions = [...(role.permissions || []), ...permissions];
     return this.rolesRepository.save(role);
   }
 
-  async removePermissions(id: number, deletePermissionsDto: DeletePermissionsDto) {
-    const role = await this.rolesRepository.findOne({ where: { id }, relations: ['permissions'] });
+  async removePermissions(
+    id: number,
+    deletePermissionsDto: DeletePermissionsDto,
+  ) {
+    const role = await this.rolesRepository.findOne({
+      where: { id },
+      relations: ['permissions'],
+    });
     if (!role) throw new NotFoundException('Role not found');
     role.permissions = (role.permissions ?? []).filter(
-      permission => !deletePermissionsDto.permissionIds.includes(permission.id)
+      (permission) =>
+        !deletePermissionsDto.permissionIds.includes(permission.id),
     );
     return this.rolesRepository.save(role);
+  }
+
+  private async getPaginatedRoles(page, limit) {
+    const skippedItems = (page - 1) * limit;
+    const [roles, total] = await this.rolesRepository.findAndCount({
+      skip: skippedItems,
+      take: limit,
+      relations: ['permissions'],
+    });
+    const formattedRoles = roles.map((role) => ({
+      ...role,
+      permissions: this.formatPermissions(role.permissions ?? []),
+    }));
+    return {
+      data: formattedRoles,
+      meta: {
+        page: +page,
+        total_pages: Math.ceil(total / limit),
+      },
+    };
+  }
+
+  private formatPermissions(permissions: Permission[]) {
+    const groupedPermissions = permissions.reduce((acc, permission) => {
+      const [action, category] = permission.name.split(':');
+      const formattedPermission = category
+        .split('_')
+        .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+        .join(' ');
+
+      if (!acc[formattedPermission]) {
+        acc[formattedPermission] = new Set();
+      }
+
+      acc[formattedPermission].add(
+        action.charAt(0).toUpperCase() + action.slice(1),
+      );
+      return acc;
+    }, {});
+
+    return Object.entries(groupedPermissions).map(([category, actions]) => ({
+      category,
+      actions: Array.from(actions as Set<string>),
+    }));
   }
 }

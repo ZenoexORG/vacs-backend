@@ -3,15 +3,15 @@ import { Vehicle } from '../../vehicles/entities/vehicle.entity';
 
 @Entity('vehicle_classes')
 export class VehicleClass {
-    @PrimaryGeneratedColumn()
-    id: number;
+  @PrimaryGeneratedColumn()
+  id: number;
 
-    @Column()
-    name: string;
+  @Column()
+  name: string;
 
-    @Column()
-    description: string;
+  @Column()
+  description: string;
 
-    @OneToOne(() => Vehicle, vehicle => vehicle.class)
-    vehicle: Vehicle;
+  @OneToOne(() => Vehicle, (vehicle) => vehicle.class)
+  vehicle: Vehicle;
 }

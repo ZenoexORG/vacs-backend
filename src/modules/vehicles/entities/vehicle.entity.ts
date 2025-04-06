@@ -1,4 +1,12 @@
-import { Entity, Column, PrimaryColumn, JoinColumn, OneToMany, OneToOne, ManyToOne } from 'typeorm';
+import {
+  Entity,
+  Column,
+  PrimaryColumn,
+  JoinColumn,
+  OneToMany,
+  OneToOne,
+  ManyToOne,
+} from 'typeorm';
 import { User } from '../../users/entities/user.entity';
 import { VehicleClass } from '../../vehicle_classes/entities/vehicle-class.entity';
 import { Incident } from '../../incidents/entities/incident.entity';
@@ -6,26 +14,29 @@ import { AccessLog } from '../../access_logs/entities/access-log.entity';
 
 @Entity('vehicles')
 export class Vehicle {
-    @PrimaryColumn()
-    id: string;
+  @PrimaryColumn()
+  id: string;
 
-    @Column()
-    class_id: number;
+  @Column()
+  class_id: number;
 
-    @Column({ nullable: true })
-    user_id?: string;
+  @Column({ nullable: true })
+  user_id?: string;
 
-    @Column({ nullable: true })
-    soat?: string;
+  @Column({ nullable: true })
+  soat?: string;
 
-    @Column()
-    created_at: Date;
+  @Column()
+  created_at: Date;
 
-    @ManyToOne(() => User, (user) => user.vehicles, { nullable: true, onDelete: 'SET NULL' })
-    @JoinColumn({ name: 'user_id' })
-    user: User;
+  @ManyToOne(() => User, (user) => user.vehicles, {
+    nullable: true,
+    onDelete: 'SET NULL',
+  })
+  @JoinColumn({ name: 'user_id' })
+  user: User;
 
-    @OneToOne(() => VehicleClass, (vehicleClass) => vehicleClass.vehicle)
-    @JoinColumn({ name: 'class_id' })
-    class: VehicleClass;
+  @OneToOne(() => VehicleClass, (vehicleClass) => vehicleClass.vehicle)
+  @JoinColumn({ name: 'class_id' })
+  class: VehicleClass;
 }

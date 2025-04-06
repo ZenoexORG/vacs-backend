@@ -1,4 +1,4 @@
 export enum KindRole {
-	SOFTWARE = 'SOFTWARE',
-	UTB = 'UTB'
+  SOFTWARE = 'SOFTWARE',
+  UTB = 'UTB',
 }
