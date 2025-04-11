@@ -30,7 +30,7 @@ export class PermissionsService {
   async findAll(paginationDto: PaginationDto) {
     const { page, limit } = paginationDto;
     if (!page && !limit) {
-      const permissions = await this.permissionsRepository.find();
+      const permissions = await this.permissionsRepository.find({order: { id: 'ASC' }});
       return {
         data: permissions,
         meta: {
@@ -40,22 +40,7 @@ export class PermissionsService {
       };
     }
     return this.getPaginatedPermissions(page, limit);
-  }
-
-  private async getPaginatedPermissions(page, limit) {
-    const skippedItems = (page - 1) * limit;
-    const [permissions, total] = await this.permissionsRepository.findAndCount({
-      skip: skippedItems,
-      take: limit,
-    });
-    return {
-      data: permissions,
-      meta: {
-        page: +page,
-        total_pages: Math.ceil(total / limit),
-      },
-    };
-  }
+  }  
 
   async findOne(id: number) {
     const permission = await this.permissionsRepository.findOne({
@@ -85,5 +70,21 @@ export class PermissionsService {
       throw new NotFoundException('Permission not found');
     }
     return this.permissionsRepository.delete(id);
+  }
+
+  private async getPaginatedPermissions(page, limit) {
+    const skippedItems = (page - 1) * limit;
+    const [permissions, total] = await this.permissionsRepository.findAndCount({
+      skip: skippedItems,
+      take: limit,
+      order: { id: 'ASC' },
+    });
+    return {
+      data: permissions,
+      meta: {
+        page: +page,
+        total_pages: Math.ceil(total / limit),
+      },
+    };
   }
 }

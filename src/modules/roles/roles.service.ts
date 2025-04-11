@@ -38,6 +38,7 @@ export class RolesService {
     if (!page && !limit) {
       const roles = await this.rolesRepository.find({
         relations: ['permissions'],
+        order: { id: 'ASC' },
       });
       const formattedRoles = roles.map((role) => ({
         ...role,
@@ -62,7 +63,11 @@ export class RolesService {
     if (!role) {
       throw new NotFoundException('Role not found');
     }
-    return role;
+    const formattedRole = {
+      ...role,
+      permissions: this.formatPermissions(role.permissions ?? []),
+    }
+    return formattedRole;
   }
 
   async update(id: number, updateRoleDto: UpdateRoleDto) {
@@ -119,6 +124,7 @@ export class RolesService {
       skip: skippedItems,
       take: limit,
       relations: ['permissions'],
+      order: { id: 'ASC' },
     });
     const formattedRoles = roles.map((role) => ({
       ...role,
@@ -133,27 +139,10 @@ export class RolesService {
     };
   }
 
-  private formatPermissions(permissions: Permission[]) {
-    const groupedPermissions = permissions.reduce((acc, permission) => {
-      const [action, category] = permission.name.split(':');
-      const formattedPermission = category
-        .split('_')
-        .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
-        .join(' ');
-
-      if (!acc[formattedPermission]) {
-        acc[formattedPermission] = new Set();
-      }
-
-      acc[formattedPermission].add(
-        action.charAt(0).toUpperCase() + action.slice(1),
-      );
-      return acc;
-    }, {});
-
-    return Object.entries(groupedPermissions).map(([category, actions]) => ({
-      category,
-      actions: Array.from(actions as Set<string>),
-    }));
+  private formatPermissions(permissions: Permission[]): string[] {
+    return permissions.map(permission => {
+      const [category, action] = permission.name.split(':');            
+      return `${category}:${action}`;
+    });
   }
 }

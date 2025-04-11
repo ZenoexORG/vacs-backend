@@ -24,6 +24,7 @@ import { PaginationDto } from '../../shared/dtos/pagination.dto';
 import { AuthGuard } from '@nestjs/passport';
 import { PermissionsGuard } from '../auth/permissions.guard';
 import { Permissions } from 'src/shared/decorators/permissions.decorator';
+import { AppPermissions } from 'src/shared/enums/permissions.enum';
 
 @ApiTags('Vehicle Classes')
 @Controller('vehicle-classes')
@@ -35,7 +36,7 @@ export class VehicleClassesController {
   @Post()
   @ApiBearerAuth()
   @UseGuards(AuthGuard('jwt'), PermissionsGuard)
-  @Permissions('create:vehicle_classes')
+  @Permissions(AppPermissions.VEHICLE_CLASSES_CREATE)
   create(@Body() createVehicleClassDto: CreateVehicleClassDto) {
     return this.vehicleClassesService.create(createVehicleClassDto);
   }
@@ -56,7 +57,7 @@ export class VehicleClassesController {
   @Get()
   @ApiBearerAuth()
   @UseGuards(AuthGuard('jwt'), PermissionsGuard)
-  @Permissions('read:vehicle_classes')
+  @Permissions(AppPermissions.VEHICLE_CLASSES_READ)
   findAll(@Query() paginationDto: PaginationDto) {
     return this.vehicleClassesService.findAll(paginationDto);
   }
@@ -66,7 +67,7 @@ export class VehicleClassesController {
   @Get(':id')
   @ApiBearerAuth()
   @UseGuards(AuthGuard('jwt'), PermissionsGuard)
-  @Permissions('read:vehicle_classes')
+  @Permissions(AppPermissions.VEHICLE_CLASSES_READ)
   findOne(@Param('id') id: string) {
     return this.vehicleClassesService.findOne(+id);
   }
@@ -76,7 +77,7 @@ export class VehicleClassesController {
   @Patch(':id')
   @ApiBearerAuth()
   @UseGuards(AuthGuard('jwt'), PermissionsGuard)
-  @Permissions('update:vehicle_classes')
+  @Permissions(AppPermissions.VEHICLE_CLASSES_UPDATE)
   update(
     @Param('id') id: string,
     @Body() updateVehicleClassDto: UpdateVehicleClassDto,
@@ -89,7 +90,7 @@ export class VehicleClassesController {
   @Delete(':id')
   @ApiBearerAuth()
   @UseGuards(AuthGuard('jwt'), PermissionsGuard)
-  @Permissions('delete:vehicle_classes')
+  @Permissions(AppPermissions.VEHICLE_CLASSES_DELETE)
   remove(@Param('id') id: string) {
     return this.vehicleClassesService.remove(+id);
   }

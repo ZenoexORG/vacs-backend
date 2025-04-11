@@ -21,7 +21,7 @@ export class IncidentsService {
   async findAll(paginationDto: PaginationDto) {
     const { page, limit } = paginationDto;
     if (!page && !limit) {
-      const incidents = await this.incidentRepository.find();
+      const incidents = await this.incidentRepository.find({order: { id: 'ASC' }});
       return {
         data: incidents,
         meta: {
@@ -31,21 +31,6 @@ export class IncidentsService {
       };
     }
     return this.getPaginatedIncidents(page, limit);
-  }
-
-  private async getPaginatedIncidents(page, limit) {
-    const skippedItems = (page - 1) * limit;
-    const [incidents, total] = await this.incidentRepository.findAndCount({
-      skip: skippedItems,
-      take: limit,
-    });
-    return {
-      data: incidents,
-      meta: {
-        page: +page,
-        total_pages: Math.ceil(total / limit),
-      },
-    };
   }
 
   async findOne(id: number) {
@@ -77,5 +62,21 @@ export class IncidentsService {
     return this.incidentRepository.count({
       where: { incident_date: Between(start, end) },
     });
+  }
+
+  private async getPaginatedIncidents(page, limit) {
+    const skippedItems = (page - 1) * limit;
+    const [incidents, total] = await this.incidentRepository.findAndCount({
+      skip: skippedItems,
+      take: limit,
+      order: { id: 'ASC' },
+    });
+    return {
+      data: incidents,
+      meta: {
+        page: +page,
+        total_pages: Math.ceil(total / limit),
+      },
+    };
   }
 }

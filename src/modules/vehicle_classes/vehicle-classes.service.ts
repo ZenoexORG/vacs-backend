@@ -30,7 +30,7 @@ export class VehicleClassesService {
   async findAll(paginationDto: PaginationDto){
     const { page, limit } = paginationDto;
     if (!page && !limit) {
-      const vehicleClasses = await this.vehicleClassRepository.find();
+      const vehicleClasses = await this.vehicleClassRepository.find({order: { id: 'ASC' }});
       return {
         data: vehicleClasses,
         meta: {
@@ -59,7 +59,7 @@ export class VehicleClassesService {
     if (!vehicleClass) {
       throw new NotFoundException('Vehicle Class not found');
     }
-    return this.vehicleClassRepository.update(id, updateVehicleClassDto);
+    return this.vehicleClassRepository.update(id, updateVehicleClassDto);    
   }
 
   async remove(id: number) {
@@ -78,6 +78,7 @@ export class VehicleClassesService {
       await this.vehicleClassRepository.findAndCount({
         skip: skippedItems,
         take: limit,
+        order: { id: 'ASC' },
       });
     return {
       data: vehicleClasses,

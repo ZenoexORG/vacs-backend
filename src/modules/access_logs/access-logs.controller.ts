@@ -23,6 +23,7 @@ import { UpdateAccessLogDto } from './dto/update-access-log.dto';
 import { PaginationDto } from '../../shared/dtos/pagination.dto';
 import { PermissionsGuard } from '../auth/permissions.guard';
 import { Permissions } from 'src/shared/decorators/permissions.decorator';
+import { AppPermissions } from 'src/shared/enums/permissions.enum';
 import { AuthGuard } from '@nestjs/passport';
 
 @ApiTags('Access Logs')
@@ -35,7 +36,7 @@ export class AccessLogsController {
   @Post()
   @ApiBearerAuth()
   @UseGuards(AuthGuard('jwt'), PermissionsGuard)
-  @Permissions('create:access-logs')
+  @Permissions(AppPermissions.ACCESS_LOG_CREATE)
   create(@Body() createAccessLogDto: CreateAccessLogDto) {
     return this.accessLogsService.create(createAccessLogDto);
   }
@@ -56,7 +57,7 @@ export class AccessLogsController {
   @Get()
   @ApiBearerAuth()
   @UseGuards(AuthGuard('jwt'), PermissionsGuard)
-  @Permissions('read:access-logs')
+  @Permissions(AppPermissions.ACCESS_LOG_READ)
   findAll(@Query() paginationDto: PaginationDto) {
     return this.accessLogsService.findAll(paginationDto);
   }
@@ -66,7 +67,7 @@ export class AccessLogsController {
   @Get(':id')
   @ApiBearerAuth()
   @UseGuards(AuthGuard('jwt'), PermissionsGuard)
-  @Permissions('read:access-logs')
+  @Permissions(AppPermissions.ACCESS_LOG_READ)
   findOne(@Param('id') id: string) {
     return this.accessLogsService.findOne(+id);
   }
@@ -76,7 +77,7 @@ export class AccessLogsController {
   @Patch(':id')
   @ApiBearerAuth()
   @UseGuards(AuthGuard('jwt'), PermissionsGuard)
-  @Permissions('update:access-logs')
+  @Permissions(AppPermissions.ACCESS_LOG_UPDATE)
   update(
     @Param('id') id: string,
     @Body() updateAccessLogDto: UpdateAccessLogDto,
@@ -89,7 +90,7 @@ export class AccessLogsController {
   @Delete(':id')
   @ApiBearerAuth()
   @UseGuards(AuthGuard('jwt'), PermissionsGuard)
-  @Permissions('delete:access-logs')
+  @Permissions(AppPermissions.ACCESS_LOG_DELETE)
   remove(@Param('id') id: string) {
     return this.accessLogsService.remove(+id);
   }
@@ -108,7 +109,7 @@ export class AccessLogsController {
   @Post('register-entry-exit/:vehicle_id/:timestamp')
   @ApiBearerAuth()
   @UseGuards(AuthGuard('jwt'), PermissionsGuard)
-  @Permissions('create:access-logs')
+  @Permissions(AppPermissions.ACCESS_LOG_CREATE)
   registerEntryOrExit(
     @Param('vehicle_id') vehicle_id: string,
     @Param('timestamp') timestamp: string,

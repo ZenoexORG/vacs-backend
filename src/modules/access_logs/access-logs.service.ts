@@ -41,12 +41,12 @@ export class AccessLogsService {
   async findAll(paginationDto: PaginationDto) {
     const { page, limit } = paginationDto;
     if (!page && !limit) {
-      const accessLogs = await this.accessLogRepository.find();
+      const accessLogs = await this.accessLogRepository.find({order: { id: 'ASC' }});
       const vehicleIds = [...new Set(accessLogs.map((log) => log.vehicle_id))];
       const vehicles = await this.vehicleRepository.find({
         where: { id: In(vehicleIds) },
         relations: ['class'],
-        select: ['id', 'class', 'user_id'],
+        select: ['id', 'class', 'user_id'],        
       });
       const vehicleMap = new Map(
         vehicles.map((vehicle) => [vehicle.id, vehicle]),
@@ -141,6 +141,7 @@ export class AccessLogsService {
     const [accessLogs, total] = await this.accessLogRepository.findAndCount({
       skip: skippedItems,
       take: limit,
+      order: { id: 'ASC' },
     });
     const vehicleIds = [...new Set(accessLogs.map((log) => log.vehicle_id))];
     const vehicles = await this.vehicleRepository.find({

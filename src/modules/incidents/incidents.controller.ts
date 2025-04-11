@@ -23,6 +23,7 @@ import { IncidentsService } from './incidents.service';
 import { AuthGuard } from '@nestjs/passport';
 import { PermissionsGuard } from '../auth/permissions.guard';
 import { Permissions } from 'src/shared/decorators/permissions.decorator';
+import { AppPermissions } from 'src/shared/enums/permissions.enum';
 
 @ApiTags('Incidents')
 @Controller('incidents')
@@ -34,7 +35,7 @@ export class IncidentsController {
   @Post()
   @ApiBearerAuth()
   @UseGuards(AuthGuard('jwt'), PermissionsGuard)
-  @Permissions('create:incidents')
+  @Permissions(AppPermissions.INCIDENTS_CREATE)
   create(@Body() createIncidentDto: CreateIncidentDto) {
     return this.incidentsService.create(createIncidentDto);
   }
@@ -55,7 +56,7 @@ export class IncidentsController {
   @Get()
   @ApiBearerAuth()
   @UseGuards(AuthGuard('jwt'), PermissionsGuard)
-  @Permissions('read:incidents')
+  @Permissions(AppPermissions.INCIDENTS_READ)
   findAll(@Query() paginationDto) {
     return this.incidentsService.findAll(paginationDto);
   }
@@ -65,7 +66,7 @@ export class IncidentsController {
   @Get(':id')
   @ApiBearerAuth()
   @UseGuards(AuthGuard('jwt'), PermissionsGuard)
-  @Permissions('read:incidents')
+  @Permissions(AppPermissions.INCIDENTS_READ)
   findOne(@Param('id') id: number) {
     return this.incidentsService.findOne(id);
   }
@@ -75,7 +76,8 @@ export class IncidentsController {
   @Patch(':id')
   @ApiBearerAuth()
   @UseGuards(AuthGuard('jwt'), PermissionsGuard)
-  @Permissions('update:incidents')
+  @Permissions(AppPermissions.INCIDENTS_UPDATE)
+  @ApiBody({ type: UpdateIncidentDto })
   update(
     @Param('id') id: number,
     @Body() updateIncidentDto: UpdateIncidentDto,
@@ -88,7 +90,7 @@ export class IncidentsController {
   @Delete(':id')
   @ApiBearerAuth()
   @UseGuards(AuthGuard('jwt'), PermissionsGuard)
-  @Permissions('delete:incidents')
+  @Permissions(AppPermissions.INCIDENTS_DELETE)
   remove(@Param('id') id: number) {
     return this.incidentsService.remove(id);
   }

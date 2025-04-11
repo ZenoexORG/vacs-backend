@@ -24,6 +24,7 @@ import { VehiclesService } from './vehicles.service';
 import { AuthGuard } from '@nestjs/passport';
 import { PermissionsGuard } from '../auth/permissions.guard';
 import { Permissions } from 'src/shared/decorators/permissions.decorator';
+import { AppPermissions } from 'src/shared/enums/permissions.enum';
 
 @ApiTags('Vehicles')
 @Controller('vehicles')
@@ -35,7 +36,7 @@ export class VehiclesController {
   @Post()
   @ApiBearerAuth()
   @UseGuards(AuthGuard('jwt'), PermissionsGuard)
-  @Permissions('create:vehicles')
+  @Permissions(AppPermissions.VEHICLE_CREATE)
   create(@Body() createVehicleDto: CreateVehicleDto) {
     return this.vehiclesService.create(createVehicleDto);
   }
@@ -56,7 +57,7 @@ export class VehiclesController {
   @Get()
   @ApiBearerAuth()
   @UseGuards(AuthGuard('jwt'), PermissionsGuard)
-  @Permissions('read:vehicles')
+  @Permissions(AppPermissions.VEHICLE_READ)
   findAll(@Query() paginationDto: PaginationDto) {
     return this.vehiclesService.findAll(paginationDto);
   }
@@ -66,7 +67,7 @@ export class VehiclesController {
   @Get(':id')
   @ApiBearerAuth()
   @UseGuards(AuthGuard('jwt'), PermissionsGuard)
-  @Permissions('read:vehicles')
+  @Permissions(AppPermissions.VEHICLE_READ)
   findOne(@Param('id') id: string) {
     return this.vehiclesService.findOne(id);
   }
@@ -76,7 +77,7 @@ export class VehiclesController {
   @Patch(':id')
   @ApiBearerAuth()
   @UseGuards(AuthGuard('jwt'), PermissionsGuard)
-  @Permissions('update:vehicles')
+  @Permissions(AppPermissions.VEHICLE_UPDATE)
   update(@Param('id') id: string, @Body() updateVehicleDto: UpdateVehicleDto) {
     return this.vehiclesService.update(id, updateVehicleDto);
   }
@@ -86,7 +87,7 @@ export class VehiclesController {
   @Delete(':id')
   @ApiBearerAuth()
   @UseGuards(AuthGuard('jwt'), PermissionsGuard)
-  @Permissions('delete:vehicles')
+  @Permissions(AppPermissions.VEHICLE_DELETE)
   remove(@Param('id') id: string) {
     return this.vehiclesService.remove(id);
   }

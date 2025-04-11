@@ -25,6 +25,7 @@ import { RolesService } from './roles.service';
 import { AuthGuard } from '@nestjs/passport';
 import { PermissionsGuard } from '../auth/permissions.guard';
 import { Permissions } from 'src/shared/decorators/permissions.decorator';
+import { AppPermissions } from 'src/shared/enums/permissions.enum';
 
 @ApiTags('Roles')
 @Controller('roles')
@@ -36,7 +37,7 @@ export class RolesController {
   @Post()
   @ApiBearerAuth()
   @UseGuards(AuthGuard('jwt'), PermissionsGuard)
-  @Permissions('create:roles')
+  @Permissions(AppPermissions.ROLE_CREATE)
   create(@Body() createRoleDto: CreateRoleDto) {
     return this.rolesService.create(createRoleDto);
   }
@@ -57,7 +58,7 @@ export class RolesController {
   @Get()
   @ApiBearerAuth()
   @UseGuards(AuthGuard('jwt'), PermissionsGuard)
-  @Permissions('read:roles')
+  @Permissions(AppPermissions.ROLE_READ)
   findAll(@Query() paginationDto) {
     return this.rolesService.findAll(paginationDto);
   }
@@ -72,7 +73,7 @@ export class RolesController {
   @Get(':id')
   @ApiBearerAuth()
   @UseGuards(AuthGuard('jwt'), PermissionsGuard)
-  @Permissions('read:roles')
+  @Permissions(AppPermissions.ROLE_READ)
   findOne(@Param('id') id: string) {
     return this.rolesService.findOne(+id);
   }
@@ -87,7 +88,8 @@ export class RolesController {
   @Patch(':id')
   @ApiBearerAuth()
   @UseGuards(AuthGuard('jwt'), PermissionsGuard)
-  @Permissions('update:roles')
+  @Permissions(AppPermissions.ROLE_UPDATE)
+  @ApiBody({ type: UpdateRoleDto })
   update(@Param('id') id: string, @Body() updateRoleDto: UpdateRoleDto) {
     return this.rolesService.update(+id, updateRoleDto);
   }
@@ -102,7 +104,7 @@ export class RolesController {
   @Delete(':id')
   @ApiBearerAuth()
   @UseGuards(AuthGuard('jwt'), PermissionsGuard)
-  @Permissions('delete:roles')
+  @Permissions(AppPermissions.ROLE_DELETE)
   remove(@Param('id') id: string) {
     return this.rolesService.remove(+id);
   }
@@ -118,7 +120,7 @@ export class RolesController {
   @Post(':id/permissions')
   @ApiBearerAuth()
   @UseGuards(AuthGuard('jwt'), PermissionsGuard)
-  @Permissions('assign:permissions')
+  @Permissions(AppPermissions.PERMISSION_ASSIGN)
   assignPermissions(
     @Param('id') id: string,
     @Body() assignPermissionsDto: AssignPermissionsDto,
@@ -137,7 +139,7 @@ export class RolesController {
   @Delete(':id/permissions')
   @ApiBearerAuth()
   @UseGuards(AuthGuard('jwt'), PermissionsGuard)
-  @Permissions('unassign:permissions')
+  @Permissions(AppPermissions.PERMISSION_UNASSIGN)
   removePermissions(
     @Param('id') id: string,
     @Body() deletePermissionsDto: DeletePermissionsDto,

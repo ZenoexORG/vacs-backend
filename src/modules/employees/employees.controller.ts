@@ -23,6 +23,7 @@ import { UpdateEmployeeDto } from './dto/update-employee.dto';
 import { AuthGuard } from '@nestjs/passport';
 import { PermissionsGuard } from '../auth/permissions.guard';
 import { Permissions } from 'src/shared/decorators/permissions.decorator';
+import { AppPermissions } from 'src/shared/enums/permissions.enum';
 
 @ApiTags('Employees')
 @Controller('employees')
@@ -34,7 +35,7 @@ export class EmployeesController {
   @Post()
   @ApiBearerAuth()
   @UseGuards(AuthGuard('jwt'), PermissionsGuard)
-  @Permissions('create:employees')
+  @Permissions(AppPermissions.EMPLOYEE_CREATE)
   create(@Body() createEmployeeDto: CreateEmployeeDto) {
     return this.employeesService.create(createEmployeeDto);
   }
@@ -55,7 +56,7 @@ export class EmployeesController {
   @Get()
   @ApiBearerAuth()
   @UseGuards(AuthGuard('jwt'), PermissionsGuard)
-  @Permissions('read:employees')
+  @Permissions(AppPermissions.EMPLOYEE_READ)
   findAll(@Query() paginationDto) {
     return this.employeesService.findAll(paginationDto);
   }
@@ -65,7 +66,7 @@ export class EmployeesController {
   @Get(':id')
   @ApiBearerAuth()
   @UseGuards(AuthGuard('jwt'), PermissionsGuard)
-  @Permissions('read:employees')
+  @Permissions(AppPermissions.EMPLOYEE_READ)
   findOne(@Param('id') id: string) {
     return this.employeesService.findOne(id);
   }
@@ -75,7 +76,7 @@ export class EmployeesController {
   @Patch(':id')
   @ApiBearerAuth()
   @UseGuards(AuthGuard('jwt'), PermissionsGuard)
-  @Permissions('update:employees')
+  @Permissions(AppPermissions.EMPLOYEE_UPDATE)
   update(
     @Param('id') id: string,
     @Body() updateEmployeeDto: UpdateEmployeeDto,
@@ -88,7 +89,7 @@ export class EmployeesController {
   @Delete(':id')
   @ApiBearerAuth()
   @UseGuards(AuthGuard('jwt'), PermissionsGuard)
-  @Permissions('delete:employees')
+  @Permissions(AppPermissions.EMPLOYEE_DELETE)
   remove(@Param('id') id: string) {
     return this.employeesService.remove(id);
   }

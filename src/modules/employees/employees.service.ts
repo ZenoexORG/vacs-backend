@@ -69,8 +69,17 @@ export class EmployeesService {
       take: limit,
       relations: { role: { permissions: true } },
     });
+    const formattedEmployees = employees.map((employee) => ({
+      ...employee,
+      role: {
+        ...employee.role,
+        permissions: this.formatPermissions(
+          employee.role.permissions ?? [],
+        ),
+      },
+    }));
     return {
-      data: employees,
+      data: formattedEmployees,
       meta: {
         page: +page,
         total_pages: Math.ceil(total / limit),
@@ -118,27 +127,10 @@ export class EmployeesService {
     return employee;
   }
 
-  private formatPermissions(permissions: Permission[]) {
-    const groupedPermissions = permissions.reduce((acc, permission) => {
-      const [action, category] = permission.name.split(':');
-      const formattedPermission = category
-        .split('_')
-        .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
-        .join(' ');
-
-      if (!acc[formattedPermission]) {
-        acc[formattedPermission] = new Set();
-      }
-
-      acc[formattedPermission].add(
-        action.charAt(0).toUpperCase() + action.slice(1),
-      );
-      return acc;
-    }, {});
-
-    return Object.entries(groupedPermissions).map(([category, actions]) => ({
-      category,
-      actions: Array.from(actions as Set<string>),
-    }));
-  }  
+  private formatPermissions(permissions: Permission[]): string[] {
+    return permissions.map(permission => {
+      const [category, action] = permission.name.split(':');            
+      return `${category}:${action}`;
+    });
+  }
 }

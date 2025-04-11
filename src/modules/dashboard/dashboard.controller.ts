@@ -8,6 +8,7 @@ import {
 import { DashboardService } from './dashboard.service';
 import { PermissionsGuard } from '../auth/permissions.guard';
 import { Permissions } from '../../shared/decorators/permissions.decorator';
+import { AppPermissions } from '../../shared/enums/permissions.enum';
 import { AuthGuard } from '@nestjs/passport';
 
 @ApiTags('Dashboard')
@@ -25,7 +26,7 @@ export class DashboardController {
   @Get('stats')
   @ApiBearerAuth()
   @UseGuards(AuthGuard('jwt'), PermissionsGuard)
-  @Permissions('read:dashboard')
+  @Permissions(AppPermissions.DASHBOARD_READ)
   async getStats(@Query('month') month: number) {
     return this.dashboardService.getStats(month);
   }
@@ -41,7 +42,7 @@ export class DashboardController {
   @Get('vehicle-entries')
   @ApiBearerAuth()
   @UseGuards(AuthGuard('jwt'), PermissionsGuard)
-  @Permissions('read:dashboard')
+  @Permissions(AppPermissions.DASHBOARD_READ)
   async getAccessLogsByMonth(
     @Query('month') month: number,
     @Query('year') year?: number,
