@@ -6,25 +6,22 @@ import {
   Param,
   Delete,
   Patch,
-  Query,
-  UseGuards,
+  Query
 } from '@nestjs/common';
 import {
   ApiTags,
   ApiOperation,
   ApiParam,
   ApiBody,
-  ApiQuery,
-  ApiBearerAuth,
+  ApiQuery,  
 } from '@nestjs/swagger';
 import { AccessLogsService } from './access-logs.service';
 import { CreateAccessLogDto } from './dto/create-access-log.dto';
 import { UpdateAccessLogDto } from './dto/update-access-log.dto';
+import { RegisterEntryExitDto } from './dto/register-entry-exit.dto';
 import { PaginationDto } from '../../shared/dtos/pagination.dto';
-import { PermissionsGuard } from '../auth/permissions.guard';
-import { Permissions } from 'src/shared/decorators/permissions.decorator';
 import { AppPermissions } from 'src/shared/enums/permissions.enum';
-import { AuthGuard } from '@nestjs/passport';
+import { Auth } from 'src/shared/decorators/permissions.decorator';
 
 @ApiTags('Access Logs')
 @Controller('access-logs')
@@ -32,53 +29,35 @@ export class AccessLogsController {
   constructor(private readonly accessLogsService: AccessLogsService) {}
 
   @ApiOperation({ summary: 'Create an access' })
-  @ApiBody({ type: CreateAccessLogDto })
+  @ApiBody({ type: CreateAccessLogDto })    
+  @Auth(AppPermissions.ACCESS_LOG_CREATE)
   @Post()
-  @ApiBearerAuth()
-  @UseGuards(AuthGuard('jwt'), PermissionsGuard)
-  @Permissions(AppPermissions.ACCESS_LOG_CREATE)
-  create(@Body() createAccessLogDto: CreateAccessLogDto) {
+  async create(@Body() createAccessLogDto: CreateAccessLogDto) {
     return this.accessLogsService.create(createAccessLogDto);
   }
 
   @ApiOperation({ summary: 'Get all accesses' })
-  @ApiQuery({
-    name: 'limit',
-    description: 'Number of items per page',
-    required: false,
-    default: 10,
-  })
-  @ApiQuery({
-    name: 'page',
-    description: 'Page number',
-    required: false,
-    default: 1,
-  })
+  @ApiQuery({ name: 'limit', description: 'Number of items per page', required: false, default: 10 })
+  @ApiQuery({ name: 'page', description: 'Page number', required: false, default: 1 })  
+  @Auth(AppPermissions.ACCESS_LOG_READ)
   @Get()
-  @ApiBearerAuth()
-  @UseGuards(AuthGuard('jwt'), PermissionsGuard)
-  @Permissions(AppPermissions.ACCESS_LOG_READ)
-  findAll(@Query() paginationDto: PaginationDto) {
+  async findAll(@Query() paginationDto: PaginationDto) {
     return this.accessLogsService.findAll(paginationDto);
   }
 
   @ApiOperation({ summary: 'Get an access by id' })
   @ApiParam({ name: 'id', description: 'Access unique id', example: 1 })
-  @Get(':id')
-  @ApiBearerAuth()
-  @UseGuards(AuthGuard('jwt'), PermissionsGuard)
-  @Permissions(AppPermissions.ACCESS_LOG_READ)
-  findOne(@Param('id') id: string) {
+  @Get(':id')  
+  @Auth(AppPermissions.ACCESS_LOG_READ)
+  async findOne(@Param('id') id: string) {
     return this.accessLogsService.findOne(+id);
   }
 
   @ApiOperation({ summary: 'Update an access' })
   @ApiParam({ name: 'id', description: 'Access unique id', example: 1 })
-  @Patch(':id')
-  @ApiBearerAuth()
-  @UseGuards(AuthGuard('jwt'), PermissionsGuard)
-  @Permissions(AppPermissions.ACCESS_LOG_UPDATE)
-  update(
+  @Patch(':id')  
+  @Auth(AppPermissions.ACCESS_LOG_UPDATE)
+  async update(
     @Param('id') id: string,
     @Body() updateAccessLogDto: UpdateAccessLogDto,
   ) {
@@ -87,33 +66,22 @@ export class AccessLogsController {
 
   @ApiOperation({ summary: 'Delete an access' })
   @ApiParam({ name: 'id', description: 'Access unique id', example: 1 })
-  @Delete(':id')
-  @ApiBearerAuth()
-  @UseGuards(AuthGuard('jwt'), PermissionsGuard)
-  @Permissions(AppPermissions.ACCESS_LOG_DELETE)
-  remove(@Param('id') id: string) {
+  @Delete(':id')  
+  @Auth(AppPermissions.ACCESS_LOG_DELETE)
+  async remove(@Param('id') id: string) {
     return this.accessLogsService.remove(+id);
   }
 
-  @ApiOperation({ summary: 'Register entry or exit of a vehicle' })
-  @ApiParam({
-    name: 'vehicle_id',
-    description: 'Vehicle unique id',
-    example: '1',
-  })
-  @ApiParam({
-    name: 'timestamp',
-    description: 'Timestamp of entry or exit',
-    example: '2021-09-01T12:00:00Z',
-  })
-  @Post('register-entry-exit/:vehicle_id/:timestamp')
-  @ApiBearerAuth()
-  @UseGuards(AuthGuard('jwt'), PermissionsGuard)
-  @Permissions(AppPermissions.ACCESS_LOG_CREATE)
-  registerEntryOrExit(
-    @Param('vehicle_id') vehicle_id: string,
-    @Param('timestamp') timestamp: string,
+  @ApiOperation({ summary: 'Register entry or exit of a vehicle' })    
+  @ApiBody({ type: RegisterEntryExitDto })
+  @Auth(AppPermissions.ACCESS_LOG_CREATE)
+  @Post('register-entry-exit')  
+  async registerEntryOrExit(
+    @Body() registerEntryExitDto: RegisterEntryExitDto,
   ) {
-    return this.accessLogsService.registerEntryOrExit(vehicle_id, timestamp);
+    return this.accessLogsService.registerEntryOrExit(
+      registerEntryExitDto.vehicle_id,
+      registerEntryExitDto.timestamp,
+    );
   }
 }

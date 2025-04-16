@@ -2,12 +2,9 @@ import {
   Entity,
   Column,
   PrimaryColumn,
-  ManyToOne,
-  CreateDateColumn,
-  JoinColumn,
+  CreateDateColumn,  
   OneToMany,
 } from 'typeorm';
-import { Role } from '../../roles/entities/role.entity';
 import { Vehicle } from '../../vehicles/entities/vehicle.entity';
 import { KindIdentification, Gender } from 'src/shared/enums';
 
@@ -30,20 +27,10 @@ export class User {
   last_name: string;
 
   @Column({ type: 'enum', enum: Gender, default: Gender.O })
-  gender: Gender;
-
-  @Column({ nullable: true })
-  role_id?: string;
+  gender: Gender;  
 
   @CreateDateColumn({ type: 'timestamp', default: () => 'CURRENT_TIMESTAMP' })
-  created_at: Date;
-
-  @ManyToOne(() => Role, (role) => role.users, {
-    nullable: true,
-    onDelete: 'SET NULL',
-  })
-  @JoinColumn({ name: 'role_id' })
-  role: Role;
+  created_at: Date;  
 
   @OneToMany(() => Vehicle, (vehicle) => vehicle.user)
   vehicles: Vehicle[];

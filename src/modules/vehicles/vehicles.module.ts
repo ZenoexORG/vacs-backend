@@ -1,3 +1,4 @@
+import { PaginationService } from 'src/shared/services/pagination.service';
 import { Module } from '@nestjs/common';
 import { VehiclesService } from './vehicles.service';
 import { VehiclesController } from './vehicles.controller';
@@ -9,7 +10,7 @@ import { VehicleClass } from '../vehicle_classes/entities/vehicle-class.entity';
 @Module({
   imports: [TypeOrmModule.forFeature([Vehicle, User, VehicleClass])],
   controllers: [VehiclesController],
-  providers: [VehiclesService],
+  providers: [VehiclesService, PaginationService],
   exports: [VehiclesService],
 })
 export class VehiclesModule {}

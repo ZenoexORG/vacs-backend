@@ -7,7 +7,7 @@ import { getDatabaseConfig } from '../config/database.config';
   imports: [
     TypeOrmModule.forRootAsync({
       inject: [ConfigService],
-      useFactory: getDatabaseConfig,
+      useFactory: getDatabaseConfig,      
     }),
   ],
 })

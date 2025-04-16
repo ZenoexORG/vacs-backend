@@ -6,25 +6,21 @@ import {
   Param,
   Delete,
   Patch,
-  Query,
-  UseGuards,
+  Query,  
 } from '@nestjs/common';
 import {
   ApiTags,
   ApiOperation,
   ApiParam,
   ApiBody,
-  ApiQuery,
-  ApiBearerAuth,
+  ApiQuery,  
 } from '@nestjs/swagger';
 import { CreateRoleDto } from './dto/create-role.dto';
 import { UpdateRoleDto } from './dto/update-role.dto';
 import { AssignPermissionsDto } from './dto/assign-permissions.dto';
 import { DeletePermissionsDto } from './dto/delete-permissions.dto';
 import { RolesService } from './roles.service';
-import { AuthGuard } from '@nestjs/passport';
-import { PermissionsGuard } from '../auth/permissions.guard';
-import { Permissions } from 'src/shared/decorators/permissions.decorator';
+import { Auth } from 'src/shared/decorators/permissions.decorator';
 import { AppPermissions } from 'src/shared/enums/permissions.enum';
 
 @ApiTags('Roles')
@@ -33,12 +29,10 @@ export class RolesController {
   constructor(private readonly rolesService: RolesService) {}
 
   @ApiOperation({ summary: 'Create a role' })
-  @ApiBody({ type: CreateRoleDto })
+  @ApiBody({ type: CreateRoleDto })  
+  @Auth(AppPermissions.ROLE_CREATE)
   @Post()
-  @ApiBearerAuth()
-  @UseGuards(AuthGuard('jwt'), PermissionsGuard)
-  @Permissions(AppPermissions.ROLE_CREATE)
-  create(@Body() createRoleDto: CreateRoleDto) {
+  async create(@Body() createRoleDto: CreateRoleDto) {
     return this.rolesService.create(createRoleDto);
   }
 
@@ -54,12 +48,10 @@ export class RolesController {
     description: 'Page number',
     required: false,
     default: 1,
-  })
+  })    
+  @Auth(AppPermissions.ROLE_READ)
   @Get()
-  @ApiBearerAuth()
-  @UseGuards(AuthGuard('jwt'), PermissionsGuard)
-  @Permissions(AppPermissions.ROLE_READ)
-  findAll(@Query() paginationDto) {
+  async findAll(@Query() paginationDto) {
     return this.rolesService.findAll(paginationDto);
   }
 
@@ -69,12 +61,10 @@ export class RolesController {
     description: 'Role unique id',
     example: 1,
     type: Number,
-  })
+  })    
+  @Auth(AppPermissions.ROLE_READ)
   @Get(':id')
-  @ApiBearerAuth()
-  @UseGuards(AuthGuard('jwt'), PermissionsGuard)
-  @Permissions(AppPermissions.ROLE_READ)
-  findOne(@Param('id') id: string) {
+  async findOne(@Param('id') id: string) {
     return this.rolesService.findOne(+id);
   }
 
@@ -85,12 +75,10 @@ export class RolesController {
     example: 1,
     type: Number,
   })
-  @Patch(':id')
-  @ApiBearerAuth()
-  @UseGuards(AuthGuard('jwt'), PermissionsGuard)
-  @Permissions(AppPermissions.ROLE_UPDATE)
   @ApiBody({ type: UpdateRoleDto })
-  update(@Param('id') id: string, @Body() updateRoleDto: UpdateRoleDto) {
+  @Auth(AppPermissions.ROLE_UPDATE)
+  @Patch(':id')  
+  async update(@Param('id') id: string, @Body() updateRoleDto: UpdateRoleDto) {
     return this.rolesService.update(+id, updateRoleDto);
   }
 
@@ -100,12 +88,10 @@ export class RolesController {
     description: 'Role unique id',
     example: 1,
     type: Number,
-  })
+  })    
+  @Auth(AppPermissions.ROLE_DELETE)
   @Delete(':id')
-  @ApiBearerAuth()
-  @UseGuards(AuthGuard('jwt'), PermissionsGuard)
-  @Permissions(AppPermissions.ROLE_DELETE)
-  remove(@Param('id') id: string) {
+  async remove(@Param('id') id: string) {
     return this.rolesService.remove(+id);
   }
 
@@ -116,12 +102,10 @@ export class RolesController {
     example: 1,
     type: Number,
   })
-  @ApiBody({ type: AssignPermissionsDto })
+  @ApiBody({ type: AssignPermissionsDto })    
+  @Auth(AppPermissions.PERMISSION_ASSIGN)
   @Post(':id/permissions')
-  @ApiBearerAuth()
-  @UseGuards(AuthGuard('jwt'), PermissionsGuard)
-  @Permissions(AppPermissions.PERMISSION_ASSIGN)
-  assignPermissions(
+  async assignPermissions(
     @Param('id') id: string,
     @Body() assignPermissionsDto: AssignPermissionsDto,
   ) {
@@ -136,11 +120,9 @@ export class RolesController {
     type: Number,
   })
   @ApiBody({ type: AssignPermissionsDto })
-  @Delete(':id/permissions')
-  @ApiBearerAuth()
-  @UseGuards(AuthGuard('jwt'), PermissionsGuard)
-  @Permissions(AppPermissions.PERMISSION_UNASSIGN)
-  removePermissions(
+  @Delete(':id/permissions')  
+  @Auth(AppPermissions.PERMISSION_UNASSIGN)
+  async removePermissions(
     @Param('id') id: string,
     @Body() deletePermissionsDto: DeletePermissionsDto,
   ) {

@@ -13,4 +13,7 @@ export class AccessLog {
 
   @Column()
   vehicle_id: string;
+
+  @Column()
+  vehicle_class: string;
 }

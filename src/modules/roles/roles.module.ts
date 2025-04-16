@@ -1,3 +1,4 @@
+import { PaginationService } from 'src/shared/services/pagination.service';
 import { Module } from '@nestjs/common';
 import { RolesController } from './roles.controller';
 import { RolesService } from './roles.service';
@@ -10,7 +11,7 @@ import { Employee } from '../employees/entities/employee.entity';
 @Module({
   imports: [TypeOrmModule.forFeature([Role, Permission, User, Employee])],
   controllers: [RolesController],
-  providers: [RolesService],
+  providers: [RolesService, PaginationService],
   exports: [RolesService],
 })
 export class RolesModule {}

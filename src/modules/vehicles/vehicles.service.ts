@@ -7,11 +7,11 @@ import { VehicleClass } from '../vehicle_classes/entities/vehicle-class.entity';
 import { PaginationDto } from '../../shared/dtos/pagination.dto';
 import { CreateVehicleDto } from './dto/create-vehicle.dto';
 import { UpdateVehicleDto } from './dto/update-vehicle.dto';
-import { getMonthRange } from 'src/shared/utils/date.utils';
 import { Vehicle } from './entities/vehicle.entity';
 import { User } from '../users/entities/user.entity';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, Between } from 'typeorm';
+import { Repository } from 'typeorm';
+import { PaginationService } from 'src/shared/services/pagination.service';
 
 @Injectable()
 export class VehiclesService {
@@ -22,6 +22,7 @@ export class VehiclesService {
     private readonly userRepository: Repository<User>,
     @InjectRepository(VehicleClass)
     private readonly vehicleClassRepository: Repository<VehicleClass>,
+    private readonly paginationService: PaginationService,
   ) {}
 
   async create(createVehicleDto: CreateVehicleDto) {
@@ -32,7 +33,7 @@ export class VehiclesService {
       throw new BadRequestException('Vehicle already exists');
     }
     const user = await this.userRepository.findOne({
-      where: { id: createVehicleDto.user_id },
+      where: { id: createVehicleDto.owner_id },
     });
     if (!user) {
       throw new NotFoundException('User not found');
@@ -48,20 +49,20 @@ export class VehiclesService {
 
   async findAll(paginationDto: PaginationDto){
     const { page, limit } = paginationDto;
-    if (!page && !limit) {
-      const vehicles = await this.vehicleRepository.find({
-        relations: ['class', 'user'],
-      });
-      const formattedVehicles = this.formatVehicles(vehicles);
-      return {
-        data: formattedVehicles,
-        meta: {
-          page: 1,
-          total_pages: 1,
-        },
-      };
-    }
-    return this.getPaginatedVehicles(page, limit);
+    const result = await this.paginationService.paginate(
+      this.vehicleRepository, 
+      page || 1,
+      limit || Number.MAX_SAFE_INTEGER,
+      {
+        relations: { class: true, user: true },
+        order: { id: 'ASC' },
+      },
+    )
+    const formattedVehicles = this.formatVehicles(result.data);
+    return {
+      data: formattedVehicles,
+      meta: result.meta,
+    };    
   }
 
   async findOne(id: string){
@@ -81,6 +82,23 @@ export class VehiclesService {
     if (!vehicle) {
       throw new NotFoundException('Vehicle not found');
     }
+    if (updateVehicleDto.owner_id) {
+      const user = await this.userRepository.findOne({
+      where: { id: updateVehicleDto.owner_id },
+      });
+      if (!user) {
+      throw new NotFoundException('User not found');
+      }
+    }
+    
+    if (updateVehicleDto.class_id) {
+      const vehicleClass = await this.vehicleClassRepository.findOne({
+      where: { id: updateVehicleDto.class_id },
+      });
+      if (!vehicleClass) {
+      throw new NotFoundException('Vehicle class not found');
+      }
+    }
     return this.vehicleRepository.update(id, updateVehicleDto);
   }
 
@@ -90,37 +108,13 @@ export class VehiclesService {
       throw new NotFoundException('Vehicle not found');
     }
     return this.vehicleRepository.remove(vehicle);
-  }
-
-  async countVehicles(month: number): Promise<number> {
-    const { start, end } = getMonthRange(month);
-    return this.vehicleRepository.count({
-      where: { created_at: Between(start, end) },
-    });
-  }
-
-  private async getPaginatedVehicles(page, limit){
-    const skippedItems = (page - 1) * limit;
-    const [vehicles, total] = await this.vehicleRepository.findAndCount({
-      skip: skippedItems,
-      take: limit,
-      relations: ['class', 'user'],
-    });
-    const formattedVehicles = this.formatVehicles(vehicles);
-    return {
-      data: formattedVehicles,
-      meta: {
-        page: +page,
-        total_pages: Math.ceil(total / limit),
-      },
-    };
-  }
+  }  
 
   private formatVehicles(vehicles: Vehicle[]){
     return vehicles.map((vehicle) => ({
       id: vehicle.id,
       type: vehicle.class.name,
-      user_id: vehicle.user.id,
+      owner_id: vehicle.user.id,
       user_fullname: `${vehicle.user.name} ${vehicle.user.last_name}`,
       soat: vehicle.soat ?? null,
       created_at: vehicle.created_at,

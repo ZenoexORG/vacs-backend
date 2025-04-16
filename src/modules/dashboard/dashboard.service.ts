@@ -6,7 +6,6 @@ import { AccessLogsService } from '../access_logs/access-logs.service';
 @Injectable()
 export class DashboardService {
   constructor(
-    private readonly vehiclesService: VehiclesService,
     private readonly incidentsService: IncidentsService,
     private readonly accessLogsService: AccessLogsService,
   ) {}
@@ -14,12 +13,16 @@ export class DashboardService {
   async getStats(month: number) {
     if (!month || month < 1 || month > 12) {
       throw new BadRequestException('Invalid month');
-    }
-    const totalVehicles = await this.vehiclesService.countVehicles(month);
+    }    
+    
+    const prevMonth = month === 1 ? 12 : month - 1;
+    const prevYear = month === 1 ? new Date().getFullYear() - 1 : new Date().getFullYear();
+
+    const totalVehicles = await this.accessLogsService.countVehiclesByMonth(month);
     const totalIncidents = await this.incidentsService.countIncidents(month);
 
-    const prevVehicles = await this.vehiclesService.countVehicles(month - 1);
-    const prevIncidents = await this.incidentsService.countIncidents(month - 1);
+    const prevVehicles = await this.accessLogsService.countVehiclesByMonth(prevMonth, prevYear);
+    const prevIncidents = await this.incidentsService.countIncidents(prevMonth, prevYear);
 
     return {
       vehicles: {
@@ -34,6 +37,7 @@ export class DashboardService {
   }
 
   private calculateGrowth(prev: number, current: number) {
+    if (prev === 0 && current === 0) return [0, 'up'];
     if (prev === 0) return [100, 'up'];
     const percentage = ((current - prev) / prev) * 100;
     return [Math.abs(percentage), percentage > 0 ? 'up' : 'down'];

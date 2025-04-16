@@ -6,23 +6,19 @@ import {
   Param,
   Delete,
   Patch,
-  Query,
-  UseGuards,
+  Query,  
 } from '@nestjs/common';
 import {
   ApiTags,
   ApiOperation,
   ApiParam,
   ApiBody,
-  ApiQuery,
-  ApiBearerAuth,
+  ApiQuery,  
 } from '@nestjs/swagger';
 import { EmployeesService } from './employees.service';
 import { CreateEmployeeDto } from './dto/create-employee.dto';
 import { UpdateEmployeeDto } from './dto/update-employee.dto';
-import { AuthGuard } from '@nestjs/passport';
-import { PermissionsGuard } from '../auth/permissions.guard';
-import { Permissions } from 'src/shared/decorators/permissions.decorator';
+import { Auth } from 'src/shared/decorators/permissions.decorator';
 import { AppPermissions } from 'src/shared/enums/permissions.enum';
 
 @ApiTags('Employees')
@@ -31,12 +27,10 @@ export class EmployeesController {
   constructor(private readonly employeesService: EmployeesService) {}
 
   @ApiOperation({ summary: 'Create an employee' })
-  @ApiBody({ type: CreateEmployeeDto })
-  @Post()
-  @ApiBearerAuth()
-  @UseGuards(AuthGuard('jwt'), PermissionsGuard)
-  @Permissions(AppPermissions.EMPLOYEE_CREATE)
-  create(@Body() createEmployeeDto: CreateEmployeeDto) {
+  @ApiBody({ type: CreateEmployeeDto })  
+  @Auth(AppPermissions.EMPLOYEE_CREATE)
+  @Post()  
+  async create(@Body() createEmployeeDto: CreateEmployeeDto) {
     return this.employeesService.create(createEmployeeDto);
   }
 
@@ -53,31 +47,25 @@ export class EmployeesController {
     required: false,
     default: 1,
   })
-  @Get()
-  @ApiBearerAuth()
-  @UseGuards(AuthGuard('jwt'), PermissionsGuard)
-  @Permissions(AppPermissions.EMPLOYEE_READ)
-  findAll(@Query() paginationDto) {
+  @Get()  
+  @Auth(AppPermissions.EMPLOYEE_READ)
+  async findAll(@Query() paginationDto) {
     return this.employeesService.findAll(paginationDto);
   }
 
   @ApiOperation({ summary: 'Get an employee by id' })
   @ApiParam({ name: 'id', description: 'Employee unique id', example: 1 })
-  @Get(':id')
-  @ApiBearerAuth()
-  @UseGuards(AuthGuard('jwt'), PermissionsGuard)
-  @Permissions(AppPermissions.EMPLOYEE_READ)
-  findOne(@Param('id') id: string) {
+  @Auth(AppPermissions.EMPLOYEE_READ)
+  @Get(':id')  
+  async findOne(@Param('id') id: string) {
     return this.employeesService.findOne(id);
   }
 
   @ApiOperation({ summary: 'Update an employee' })
   @ApiParam({ name: 'id', description: 'Employee unique id', example: 1 })
-  @Patch(':id')
-  @ApiBearerAuth()
-  @UseGuards(AuthGuard('jwt'), PermissionsGuard)
-  @Permissions(AppPermissions.EMPLOYEE_UPDATE)
-  update(
+  @Auth(AppPermissions.EMPLOYEE_UPDATE)
+  @Patch(':id')  
+  async update(
     @Param('id') id: string,
     @Body() updateEmployeeDto: UpdateEmployeeDto,
   ) {
@@ -85,12 +73,10 @@ export class EmployeesController {
   }
 
   @ApiOperation({ summary: 'Delete an employee' })
-  @ApiParam({ name: 'id', description: 'Employee unique id', example: 1 })
-  @Delete(':id')
-  @ApiBearerAuth()
-  @UseGuards(AuthGuard('jwt'), PermissionsGuard)
-  @Permissions(AppPermissions.EMPLOYEE_DELETE)
-  remove(@Param('id') id: string) {
+  @ApiParam({ name: 'id', description: 'Employee unique id', example: 1 })  
+  @Auth(AppPermissions.EMPLOYEE_DELETE)
+  @Delete(':id')  
+  async remove(@Param('id') id: string) {
     return this.employeesService.remove(id);
   }
 }

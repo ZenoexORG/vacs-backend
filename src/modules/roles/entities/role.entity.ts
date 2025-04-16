@@ -5,7 +5,6 @@ import {
   OneToMany,
   ManyToMany,
 } from 'typeorm';
-import { User } from '../../users/entities/user.entity';
 import { Employee } from '../../employees/entities/employee.entity';
 import { Permission } from '../../permissions/entities/permission.entity';
 
@@ -18,10 +17,7 @@ export class Role {
   name: string;
 
   @Column({ nullable: true })
-  description?: string;
-
-  @OneToMany(() => User, (user) => user.role)
-  users?: User[];
+  description?: string;  
 
   @OneToMany(() => Employee, (employee) => employee.role)
   employees?: Employee[];

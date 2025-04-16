@@ -4,20 +4,20 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { Repository, Not } from 'typeorm';
 import { CreateEmployeeDto } from './dto/create-employee.dto';
 import { UpdateEmployeeDto } from './dto/update-employee.dto';
 import { PaginationDto } from '../../shared/dtos/pagination.dto';
 import { Employee } from './entities/employee.entity';
 import { Permission } from '../permissions/entities/permission.entity';
-
+import { PaginationService } from 'src/shared/services/pagination.service';
 
 @Injectable()
 export class EmployeesService {
   constructor(
     @InjectRepository(Employee)
     private employeesRepository: Repository<Employee>,
-    
+    private readonly paginationService: PaginationService,
   ) {}
 
   async create(createEmployeeDto: CreateEmployeeDto): Promise<Employee> {
@@ -34,58 +34,25 @@ export class EmployeesService {
           : 'ID already exists',
       );
     }
-    return this.employeesRepository.save(createEmployeeDto);
+    const newEmployee = this.employeesRepository.create(createEmployeeDto);
+    return this.employeesRepository.save(newEmployee);
   }
 
   async findAll(paginationDto: PaginationDto) {
     const { page, limit } = paginationDto;
-    if (!page && !limit) {
-      const employeess = await this.employeesRepository.find({
+    const result = await this.paginationService.paginate(
+      this.employeesRepository,
+      page || 1,
+      limit || Number.MAX_SAFE_INTEGER,
+      {
         relations: { role: { permissions: true } },
-      });
-      const formattedEmployeess = employeess.map((employee) => ({
-        ...employee,
-        role: {
-          ...employee.role,
-          permissions: this.formatPermissions(employee.role.permissions ?? []),
-        },
-      }));
-
-      return {
-        data: formattedEmployeess,
-        meta: {
-          page: 1,
-          total_pages: 1,
-        },
-      };
-    }
-    return this.getPaginatedEmployees(page, limit);
-  }
-
-  private async getPaginatedEmployees(page, limit) {
-    const skippedItems = (page - 1) * limit;
-    const [employees, total] = await this.employeesRepository.findAndCount({
-      skip: skippedItems,
-      take: limit,
-      relations: { role: { permissions: true } },
-    });
-    const formattedEmployees = employees.map((employee) => ({
-      ...employee,
-      role: {
-        ...employee.role,
-        permissions: this.formatPermissions(
-          employee.role.permissions ?? [],
-        ),
       },
-    }));
+    );
     return {
-      data: formattedEmployees,
-      meta: {
-        page: +page,
-        total_pages: Math.ceil(total / limit),
-      },
-    };
-  }
+      data: this.formatEmployeesWithPermissions(result.data),
+      meta: result.meta
+    }
+  }    
 
   async findOne(id: string) {
     const employee = await this.employeesRepository.findOne({
@@ -98,12 +65,27 @@ export class EmployeesService {
     return employee;
   }
 
-  async update(id: string, updateEmployeeDto: UpdateEmployeeDto) {
-    const employee = await this.employeesRepository.findOne({ where: { id } });
-    if (!employee) {
-      throw new NotFoundException('Employee not found');
+  async update(id: string, updateEmployeeDto: UpdateEmployeeDto) {    
+    const existingEmployee = await this.employeesRepository.findOne({
+      where: { id },
+    });
+    if (!existingEmployee) {
+      throw new NotFoundException(`Employee with ID "${id}" not found`);
     }
-    return this.employeesRepository.update(id, updateEmployeeDto);
+
+    if (updateEmployeeDto.username) {
+      const duplicateUsername = await this.employeesRepository.findOne({
+        where: { username: updateEmployeeDto.username, id: Not(id) },
+      });
+      if (duplicateUsername) {
+        throw new BadRequestException('Username already exists');
+      }
+    }    
+    const updatedEmployee = this.employeesRepository.create({
+      ...existingEmployee,
+      ...updateEmployeeDto,
+    });
+    return this.employeesRepository.save(updatedEmployee);
   }
 
   async remove(id: string) {
@@ -125,6 +107,16 @@ export class EmployeesService {
       );
     }
     return employee;
+  }
+
+  private formatEmployeesWithPermissions(employees: Employee[]) {
+    return employees.map(employee => ({
+      ...employee,
+      role: {
+        ...employee.role,
+        permissions: this.formatPermissions(employee.role.permissions ?? []),
+      }
+    }));
   }
 
   private formatPermissions(permissions: Permission[]): string[] {

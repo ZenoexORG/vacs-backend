@@ -16,4 +16,14 @@ export class CreateAccessLogDto {
   @IsNotEmpty({ message: 'Vehicle id is required' })
   @IsString({ message: 'Vehicle id must be a string' })
   vehicle_id: string;
+
+  @ApiProperty({ 
+    description: 'Vehicle class', 
+    example: 'Authorized',
+    enum: ['Authorized', 'Unathorized', 'Visitor', 'Private', 'Provider'], 
+    enumName: 'VehicleClassType'
+  })
+  @IsNotEmpty({ message: 'Vehicle class is required' })
+  @IsString({ message: 'Vehicle class must be a string' })
+  vehicle_class: string;
 }

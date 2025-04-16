@@ -42,4 +42,8 @@ export enum AppPermissions {
     INCIDENTS_DELETE = 'incidents:delete',    
 
     DASHBOARD_READ = 'dashboard:read',
+    
+    REPORTS_GENERATE = 'daily-reports:generate',
+    REPORTS_READ = 'daily-reports:read',
+    REPORTS_DELETE = 'daily-reports:delete',
 }

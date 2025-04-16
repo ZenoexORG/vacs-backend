@@ -6,24 +6,20 @@ import {
   Param,
   Delete,
   Patch,
-  Query,
-  UseGuards,
+  Query,  
 } from '@nestjs/common';
 import {
   ApiTags,
   ApiOperation,
   ApiParam,
   ApiBody,
-  ApiQuery,
-  ApiBearerAuth,
+  ApiQuery,  
 } from '@nestjs/swagger';
 import { VehicleClassesService } from './vehicle-classes.service';
 import { CreateVehicleClassDto } from './dto/create-vehicle-class.dto';
 import { UpdateVehicleClassDto } from './dto/update-vehicle-class.dto';
 import { PaginationDto } from '../../shared/dtos/pagination.dto';
-import { AuthGuard } from '@nestjs/passport';
-import { PermissionsGuard } from '../auth/permissions.guard';
-import { Permissions } from 'src/shared/decorators/permissions.decorator';
+import { Auth } from 'src/shared/decorators/permissions.decorator';
 import { AppPermissions } from 'src/shared/enums/permissions.enum';
 
 @ApiTags('Vehicle Classes')
@@ -32,12 +28,10 @@ export class VehicleClassesController {
   constructor(private readonly vehicleClassesService: VehicleClassesService) {}
 
   @ApiOperation({ summary: 'Create a vehicle class' })
-  @ApiBody({ type: CreateVehicleClassDto })
+  @ApiBody({ type: CreateVehicleClassDto })    
+  @Auth(AppPermissions.VEHICLE_CLASSES_CREATE)
   @Post()
-  @ApiBearerAuth()
-  @UseGuards(AuthGuard('jwt'), PermissionsGuard)
-  @Permissions(AppPermissions.VEHICLE_CLASSES_CREATE)
-  create(@Body() createVehicleClassDto: CreateVehicleClassDto) {
+  async create(@Body() createVehicleClassDto: CreateVehicleClassDto) {
     return this.vehicleClassesService.create(createVehicleClassDto);
   }
 
@@ -53,32 +47,26 @@ export class VehicleClassesController {
     description: 'Number of items per page',
     required: false,
     default: 10,
-  })
+  })    
+  @Auth(AppPermissions.VEHICLE_CLASSES_READ)
   @Get()
-  @ApiBearerAuth()
-  @UseGuards(AuthGuard('jwt'), PermissionsGuard)
-  @Permissions(AppPermissions.VEHICLE_CLASSES_READ)
-  findAll(@Query() paginationDto: PaginationDto) {
+  async findAll(@Query() paginationDto: PaginationDto) {
     return this.vehicleClassesService.findAll(paginationDto);
   }
 
   @ApiOperation({ summary: 'Get a vehicle class by id' })
-  @ApiParam({ name: 'id', description: 'Vehicle class unique id', example: 1 })
-  @Get(':id')
-  @ApiBearerAuth()
-  @UseGuards(AuthGuard('jwt'), PermissionsGuard)
-  @Permissions(AppPermissions.VEHICLE_CLASSES_READ)
-  findOne(@Param('id') id: string) {
+  @ApiParam({ name: 'id', description: 'Vehicle class unique id', example: 1 })  
+  @Auth(AppPermissions.VEHICLE_CLASSES_READ)
+  @Get(':id')  
+  async findOne(@Param('id') id: string) {
     return this.vehicleClassesService.findOne(+id);
   }
 
   @ApiOperation({ summary: 'Update a vehicle class' })
-  @ApiParam({ name: 'id', description: 'Vehicle class unique id', example: 1 })
+  @ApiParam({ name: 'id', description: 'Vehicle class unique id', example: 1 })    
+  @Auth(AppPermissions.VEHICLE_CLASSES_UPDATE)
   @Patch(':id')
-  @ApiBearerAuth()
-  @UseGuards(AuthGuard('jwt'), PermissionsGuard)
-  @Permissions(AppPermissions.VEHICLE_CLASSES_UPDATE)
-  update(
+  async update(
     @Param('id') id: string,
     @Body() updateVehicleClassDto: UpdateVehicleClassDto,
   ) {
@@ -86,12 +74,10 @@ export class VehicleClassesController {
   }
 
   @ApiOperation({ summary: 'Delete a vehicle class' })
-  @ApiParam({ name: 'id', description: 'Vehicle class unique id', example: 1 })
+  @ApiParam({ name: 'id', description: 'Vehicle class unique id', example: 1 })    
+  @Auth(AppPermissions.VEHICLE_CLASSES_DELETE)
   @Delete(':id')
-  @ApiBearerAuth()
-  @UseGuards(AuthGuard('jwt'), PermissionsGuard)
-  @Permissions(AppPermissions.VEHICLE_CLASSES_DELETE)
-  remove(@Param('id') id: string) {
+  async remove(@Param('id') id: string) {
     return this.vehicleClassesService.remove(+id);
   }
 }

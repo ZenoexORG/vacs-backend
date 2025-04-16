@@ -3,6 +3,7 @@ import {
   BadRequestException,
   NotFoundException,
 } from '@nestjs/common';
+import { PaginationService } from 'src/shared/services/pagination.service';
 import { CreateAccessLogDto } from './dto/create-access-log.dto';
 import { UpdateAccessLogDto } from './dto/update-access-log.dto';
 import { PaginationDto } from '../../shared/dtos/pagination.dto';
@@ -11,6 +12,7 @@ import { Vehicle } from '../vehicles/entities/vehicle.entity';
 import { AccessLog } from './entities/access-log.entity';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, IsNull, In } from 'typeorm';
+import * as moment from 'moment';
 
 @Injectable()
 export class AccessLogsService {
@@ -18,56 +20,40 @@ export class AccessLogsService {
     @InjectRepository(AccessLog)
     private accessLogRepository: Repository<AccessLog>,
     @InjectRepository(Vehicle)
-    private vehicleRepository: Repository<Vehicle>,
+    private vehicleRepository: Repository<Vehicle>,    
+    private readonly paginationService: PaginationService,
   ) {}
 
   async create(createAccessLogDto: CreateAccessLogDto) {
     const existingOpenLog = await this.accessLogRepository.findOne({
       where: { vehicle_id: createAccessLogDto.vehicle_id, exit_date: IsNull() },
     });
-
     if (existingOpenLog) {
       throw new BadRequestException('Vehicle already has an open access log');
     }
-
     const entryDate = new Date(createAccessLogDto.entry_date);
     if (isNaN(entryDate.getTime())) {
-      throw new BadRequestException('Invalid entry date');
+      throw new BadRequestException('Entry date is not a valid date');
     }
-
     return this.accessLogRepository.save(createAccessLogDto);
   }
 
   async findAll(paginationDto: PaginationDto) {
-    const { page, limit } = paginationDto;
-    if (!page && !limit) {
-      const accessLogs = await this.accessLogRepository.find({order: { id: 'ASC' }});
-      const vehicleIds = [...new Set(accessLogs.map((log) => log.vehicle_id))];
-      const vehicles = await this.vehicleRepository.find({
-        where: { id: In(vehicleIds) },
-        relations: ['class'],
-        select: ['id', 'class', 'user_id'],        
-      });
-      const vehicleMap = new Map(
-        vehicles.map((vehicle) => [vehicle.id, vehicle]),
-      );
-      const enrichedLogs = accessLogs.map((log) => {
-        const vehicle = vehicleMap.get(log.vehicle_id);
-        return {
-          ...log,
-          type: vehicle?.class?.name || 'Unknown',
-          user_id: vehicle?.user_id || null,
-        };
-      });
-      return {
-        data: enrichedLogs,
-        meta: {
-          page: 1,
-          total_pages: 1,
-        },
-      };
-    }
-    return this.getPaginatedAccessLogs(page, limit);
+    const { page , limit } = paginationDto;
+    
+    const result = await this.paginationService.paginate(
+      this.accessLogRepository,
+      page || 1,
+      limit || Number.MAX_SAFE_INTEGER,
+      {
+        order: { id: 'ASC' },
+      },
+    );   
+    const enrichedLogs = await this.enrichAccessLogs(result.data);
+    return {
+      data: enrichedLogs,
+      meta: result.meta,
+    };
   }
 
   async findOne(id: number) {
@@ -95,28 +81,53 @@ export class AccessLogsService {
   }
 
   async registerEntryOrExit(vehicle_id: string, timestamp: string) {
+    if (!vehicle_id) {
+      throw new BadRequestException('Vehicle ID is required');
+    }
+    if (!timestamp) {
+      throw new BadRequestException('Timestamp is required');
+    }
+    if (!this.validateColombianLicensePlate(vehicle_id)) {
+      throw new BadRequestException('Invalid Colombian license plate format');
+    }
+    const vehicle = await this.vehicleRepository.findOne({
+      where: { id: vehicle_id },
+      relations: ['class'],
+    });
+
     const latestAccessLog = await this.accessLogRepository.findOne({
       where: { vehicle_id },
       order: { entry_date: 'DESC' },
     });
 
-    const newTimestamp = new Date(timestamp);
+    const newTimestamp = moment(timestamp)
+    const now = moment();
 
-    if (isNaN(newTimestamp.getTime())) {
-      throw new BadRequestException('Invalid date format');
+    if (!newTimestamp.isValid()) {
+      throw new BadRequestException('Invalid date format. Expected format ISO 8601 format');
     }
-
+    if (newTimestamp.isAfter(now)) {
+      throw new BadRequestException('Timestamp cannot be in the future');
+    }
+    const oneWeekAgo = moment().subtract(1, 'weeks');
+    if (newTimestamp.isBefore(oneWeekAgo)) {
+      throw new BadRequestException('Timestamp cannot be older than one week');
+    }
+        
     if (latestAccessLog && !latestAccessLog.exit_date) {
-      const entryDate = new Date(latestAccessLog.entry_date);
-      if (newTimestamp < entryDate) {
+      const entryDate = moment(latestAccessLog.entry_date);
+      if (newTimestamp.isBefore(entryDate)) {
         throw new BadRequestException('Exit date cannot be before entry date');
-      }
-      return this.update(latestAccessLog.id, { exit_date: newTimestamp });
+      }      
+      return this.update(latestAccessLog.id, {
+        exit_date: newTimestamp.toDate(),
+      });
     } else {
       return this.accessLogRepository.save({
-        entry_date: newTimestamp,
         vehicle_id,
-      });
+        entry_date: newTimestamp.toDate(),
+        vehicle_class: vehicle?.class?.name || 'Unregistered',
+      })
     }
   }
 
@@ -133,42 +144,53 @@ export class AccessLogsService {
       .orderBy('date')
       .getRawMany();
 
-    return result.map(({ date, total }) => ({ date, total: parseInt(total) }));
+      const today = moment();
+      const isCurrentMonth = today.month() + 1 === month && (!year || today.year() === year);
+      const daysToInclude = isCurrentMonth ? today.date() : moment(start).daysInMonth();      
+      const fullMonth = Array.from({ length: daysToInclude }, (_, i) => {
+        const date = moment(start).date(i + 1).format('MMM DD').toUpperCase();
+        const found = result.find(r => r.date === date);
+        return { date, total: found ? parseInt(found.total) : 0 };
+      });
+    
+      return fullMonth;
   }
 
-  private async getPaginatedAccessLogs(page, limit) {
-    const skippedItems = (page - 1) * limit;
-    const [accessLogs, total] = await this.accessLogRepository.findAndCount({
-      skip: skippedItems,
-      take: limit,
-      order: { id: 'ASC' },
-    });
+  async countVehiclesByMonth(month: number, year?: number) {    
+    const { start, end } = getMonthRange(month, year);    
+    const result = await this.accessLogRepository
+      .createQueryBuilder('log')
+      .select('COUNT(DISTINCT log.vehicle_id)', 'total')
+      .where('log.entry_date BETWEEN :start AND :end', { start, end })
+      .getRawOne();
+    return parseInt(result?.total) || 0;
+  }
+
+  private async enrichAccessLogs(accessLogs: AccessLog[]) {
     const vehicleIds = [...new Set(accessLogs.map((log) => log.vehicle_id))];
     const vehicles = await this.vehicleRepository.find({
       where: { id: In(vehicleIds) },
       relations: ['class'],
-      select: ['id', 'class', 'user_id'],
+      select: ['id', 'class', 'owner_id'],
     });
     const vehicleMap = new Map(
       vehicles.map((vehicle) => [vehicle.id, vehicle]),
     );
-
-    const enrichedLogs = accessLogs.map((log) => {
+    return accessLogs.map((log) => {
       const vehicle = vehicleMap.get(log.vehicle_id);
       return {
         ...log,
-        type: vehicle?.class?.name || 'Unknown',
-        user_id: vehicle?.user_id || null,
+        owner_id: vehicle?.owner_id || null,
       };
-    });
-
-    return {
-      data: enrichedLogs,
-      meta: {
-        page: +page,
-        total_pages: Math.ceil(total / limit),
-      },
-    };
+    }
+    );
   }
-  1;
+
+  private validateColombianLicensePlate(plateNumber: string): boolean {    
+    const plateRegex = /^[A-Z]{3}\d{3}$|^[A-Z]{2}\d{4}$/;
+    if (!plateRegex.test(plateNumber)) {
+      return false;
+    }
+    return true;
+  }
 }

@@ -1,3 +1,5 @@
+import { LocalToUTCInterceptor } from './shared/interceptors/local-to-utc.interceptor';
+import { UTCToLocalInterceptor } from './shared/interceptors/utc-to-loca.interceptor';
 import { swaggerConfig } from './config/swagger.config';
 import { SwaggerModule } from '@nestjs/swagger';
 import * as cookieParser from 'cookie-parser';
@@ -9,6 +11,7 @@ async function bootstrap() {
   const document = SwaggerModule.createDocument(app, swaggerConfig);
   SwaggerModule.setup('docs', app, document);
   app.use(cookieParser(process.env.COOKIE_SECRET || 'super_safe_secret'));
+  app.useGlobalInterceptors(new LocalToUTCInterceptor(), new UTCToLocalInterceptor());
   await app.listen(process.env.PORT ?? 3000);
 }
 bootstrap();

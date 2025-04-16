@@ -13,7 +13,7 @@ export class CreateVehicleDto {
   @ApiProperty({ description: 'Vehicle user id', example: 1 })
   @IsInt({ message: 'User id must be a string' })
   @IsOptional()
-  user_id?: string;
+  owner_id?: string;
 
   @ApiProperty({ description: 'Vehicle soat', example: 'ABC123' })
   @IsString({ message: 'Soat must be a string' })

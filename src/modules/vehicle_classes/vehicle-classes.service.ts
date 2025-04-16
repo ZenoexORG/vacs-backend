@@ -9,12 +9,14 @@ import { VehicleClass } from './entities/vehicle-class.entity';
 import { CreateVehicleClassDto } from './dto/create-vehicle-class.dto';
 import { UpdateVehicleClassDto } from './dto/update-vehicle-class.dto';
 import { PaginationDto } from '../../shared/dtos/pagination.dto';
+import { PaginationService } from 'src/shared/services/pagination.service';
 
 @Injectable()
 export class VehicleClassesService {
   constructor(
     @InjectRepository(VehicleClass)
     private readonly vehicleClassRepository: Repository<VehicleClass>,
+    private readonly paginationService: PaginationService,
   ) {}
 
   async create(createVehicleClassDto: CreateVehicleClassDto) {
@@ -29,17 +31,18 @@ export class VehicleClassesService {
 
   async findAll(paginationDto: PaginationDto){
     const { page, limit } = paginationDto;
-    if (!page && !limit) {
-      const vehicleClasses = await this.vehicleClassRepository.find({order: { id: 'ASC' }});
-      return {
-        data: vehicleClasses,
-        meta: {
-          page: 1,
-          total_pages: 1,
-        },
-      };
-    }
-    return this.getPaginatedVehicleClasses(page, limit);
+    const result = await this.paginationService.paginate(
+      this.vehicleClassRepository,
+      page || 1,
+      limit || Number.MAX_SAFE_INTEGER,
+      {
+        order: { id: 'ASC' },
+      },
+    );
+    return {
+      data: result.data,
+      meta: result.meta,
+    };    
   }
 
   async findOne(id: number) {
@@ -70,22 +73,5 @@ export class VehicleClassesService {
       throw new NotFoundException('Vehicle Class not found');
     }
     return this.vehicleClassRepository.delete(id);
-  }
-
-  private async getPaginatedVehicleClasses(page, limit) {
-    const skippedItems = (page - 1) * limit;
-    const [vehicleClasses, total] =
-      await this.vehicleClassRepository.findAndCount({
-        skip: skippedItems,
-        take: limit,
-        order: { id: 'ASC' },
-      });
-    return {
-      data: vehicleClasses,
-      meta: {
-        page: +page,
-        total_pages: Math.ceil(total / limit),
-      },
-    };
-  }
+  }  
 }

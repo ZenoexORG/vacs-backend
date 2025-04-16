@@ -6,23 +6,19 @@ import {
   Param,
   Delete,
   Patch,
-  Query,
-  UseGuards,
+  Query,  
 } from '@nestjs/common';
 import {
   ApiTags,
   ApiOperation,
   ApiParam,
   ApiBody,
-  ApiQuery,
-  ApiBearerAuth,
+  ApiQuery,  
 } from '@nestjs/swagger';
 import { PermissionsService } from './permissions.service';
 import { CreatePermissionDto } from './dto/create-permission.dto';
 import { UpdatePermissionDto } from './dto/update-permission.dto';
-import { AuthGuard } from '@nestjs/passport';
-import { PermissionsGuard } from '../auth/permissions.guard';
-import { Permissions } from 'src/shared/decorators/permissions.decorator';
+import { Auth } from 'src/shared/decorators/permissions.decorator';
 import { AppPermissions } from 'src/shared/enums/permissions.enum';
 
 @ApiTags('Permissions')
@@ -31,12 +27,10 @@ export class PermissionsController {
   constructor(private readonly permissionsService: PermissionsService) {}
 
   @ApiOperation({ summary: 'Create a permission' })
-  @ApiBody({ type: CreatePermissionDto })
+  @ApiBody({ type: CreatePermissionDto })    
+  @Auth(AppPermissions.PERMISSION_CREATE)
   @Post()
-  @ApiBearerAuth()
-  @UseGuards(AuthGuard('jwt'), PermissionsGuard)
-  @Permissions(AppPermissions.PERMISSION_CREATE)
-  create(@Body() createPermissionDto: CreatePermissionDto) {
+  async create(@Body() createPermissionDto: CreatePermissionDto) {
     return this.permissionsService.create(createPermissionDto);
   }
 
@@ -52,12 +46,10 @@ export class PermissionsController {
     description: 'Page number',
     required: false,
     default: 1,
-  })
+  })  
+  @Auth(AppPermissions.PERMISSION_READ)
   @Get()
-  @ApiBearerAuth()
-  @UseGuards(AuthGuard('jwt'), PermissionsGuard)
-  @Permissions(AppPermissions.PERMISSION_READ)
-  findAll(@Query() paginationDto) {
+  async findAll(@Query() paginationDto) {
     return this.permissionsService.findAll(paginationDto);
   }
 
@@ -67,12 +59,10 @@ export class PermissionsController {
     description: 'Permission unique id',
     example: 1,
     type: Number,
-  })
+  })    
+  @Auth(AppPermissions.PERMISSION_READ)
   @Get(':id')
-  @ApiBearerAuth()
-  @UseGuards(AuthGuard('jwt'), PermissionsGuard)
-  @Permissions(AppPermissions.PERMISSION_READ)
-  findOne(@Param('id') id: string) {
+  async findOne(@Param('id') id: string) {
     return this.permissionsService.findOne(+id);
   }
 
@@ -82,12 +72,10 @@ export class PermissionsController {
     description: 'Permission unique id',
     example: 1,
     type: Number,
-  })
+  })    
+  @Auth(AppPermissions.PERMISSION_UPDATE)
   @Patch(':id')
-  @ApiBearerAuth()
-  @UseGuards(AuthGuard('jwt'), PermissionsGuard)
-  @Permissions(AppPermissions.PERMISSION_UPDATE)
-  update(
+  async update(
     @Param('id') id: string,
     @Body() updatePermissionDto: UpdatePermissionDto,
   ) {
@@ -100,12 +88,10 @@ export class PermissionsController {
     description: 'Permission unique id',
     example: 1,
     type: Number,
-  })
+  })    
+  @Auth(AppPermissions.PERMISSION_DELETE)
   @Delete(':id')
-  @ApiBearerAuth()
-  @UseGuards(AuthGuard('jwt'), PermissionsGuard)
-  @Permissions(AppPermissions.PERMISSION_DELETE)
-  remove(@Param('id') id: string) {
+  async remove(@Param('id') id: string) {
     return this.permissionsService.remove(+id);
   }
 }

@@ -12,6 +12,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { PaginationDto } from 'src/shared/dtos';
 import { Role } from './entities/role.entity';
 import { Repository, In } from 'typeorm';
+import { PaginationService } from 'src/shared/services/pagination.service';
 
 @Injectable()
 export class RolesService {
@@ -21,6 +22,7 @@ export class RolesService {
 
     @InjectRepository(Permission)
     private permissionsRepository: Repository<Permission>,
+    private readonly paginationService: PaginationService,
   ) {}
 
   async create(createRoleDto: CreateRoleDto): Promise<Role> {
@@ -35,24 +37,23 @@ export class RolesService {
 
   async findAll(paginationDto: PaginationDto) {
     const { page, limit } = paginationDto;
-    if (!page && !limit) {
-      const roles = await this.rolesRepository.find({
-        relations: ['permissions'],
+    const result = await this.paginationService.paginate(
+      this.rolesRepository,
+      page || 1,
+      limit || Number.MAX_SAFE_INTEGER,
+      {
+        relations: { permissions: true },
         order: { id: 'ASC' },
-      });
-      const formattedRoles = roles.map((role) => ({
-        ...role,
-        permissions: this.formatPermissions(role.permissions ?? []),
-      }));
-      return {
-        data: formattedRoles,
-        meta: {
-          page: 1,
-          total_pages: 1,
-        },
-      };
-    }
-    return this.getPaginatedRoles(page, limit);
+      },
+    );
+    const formattedRoles = result.data.map((role) => ({
+      ...role,
+      permissions: this.formatPermissions(role.permissions ?? []),
+    }));
+    return {
+      data: formattedRoles,
+      meta: result.meta,
+    };    
   }
 
   async findOne(id: number) {

@@ -6,23 +6,19 @@ import {
   Param,
   Delete,
   Patch,
-  Query,
-  UseGuards,
+  Query,  
 } from '@nestjs/common';
 import {
   ApiTags,
   ApiOperation,
   ApiParam,
   ApiBody,
-  ApiQuery,
-  ApiBearerAuth,
+  ApiQuery,  
 } from '@nestjs/swagger';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { UsersService } from './users.service';
-import { AuthGuard } from '@nestjs/passport';
-import { PermissionsGuard } from '../auth/permissions.guard';
-import { Permissions } from 'src/shared/decorators/permissions.decorator';
+import { Auth } from 'src/shared/decorators/permissions.decorator';
 import { AppPermissions } from 'src/shared/enums/permissions.enum';
 
 @ApiTags('Users')
@@ -31,12 +27,10 @@ export class UsersController {
   constructor(private readonly usersService: UsersService) {}
 
   @ApiOperation({ summary: 'Create an user' })
-  @ApiBody({ type: CreateUserDto })
+  @ApiBody({ type: CreateUserDto })    
+  @Auth(AppPermissions.USER_CREATE)
   @Post()
-  @ApiBearerAuth()
-  @UseGuards(AuthGuard('jwt'), PermissionsGuard)
-  @Permissions(AppPermissions.USER_CREATE)
-  create(@Body() createUserDto: CreateUserDto) {
+  async create(@Body() createUserDto: CreateUserDto) {
     return this.usersService.create(createUserDto);
   }
 
@@ -52,42 +46,34 @@ export class UsersController {
     description: 'Page number',
     required: false,
     default: 1,
-  })
+  })    
+  @Auth(AppPermissions.USER_READ)
   @Get()
-  @ApiBearerAuth()
-  @UseGuards(AuthGuard('jwt'), PermissionsGuard)
-  @Permissions(AppPermissions.USER_READ)
-  findAll(@Query() paginationDto) {
+  async findAll(@Query() paginationDto) {
     return this.usersService.findAll(paginationDto);
   }
 
   @ApiOperation({ summary: 'Get an user by id' })
   @ApiParam({ name: 'id', description: 'User unique id', example: 1 })
-  @Get(':id')
-  @ApiBearerAuth()
-  @UseGuards(AuthGuard('jwt'), PermissionsGuard)
-  @Permissions(AppPermissions.USER_READ)
-  findOne(@Param('id') id: string) {
+  @Get(':id')  
+  @Auth(AppPermissions.USER_READ)
+  async findOne(@Param('id') id: string) {
     return this.usersService.findOne(id);
   }
 
   @ApiOperation({ summary: 'Update an user' })
   @ApiParam({ name: 'id', description: 'User unique id', example: 1 })
-  @Patch(':id')
-  @ApiBearerAuth()
-  @UseGuards(AuthGuard('jwt'), PermissionsGuard)
-  @Permissions(AppPermissions.USER_UPDATE)
-  update(@Param('id') id: string, @Body() updateUserDto: UpdateUserDto) {
+  @Patch(':id')  
+  @Auth(AppPermissions.USER_UPDATE)
+  async update(@Param('id') id: string, @Body() updateUserDto: UpdateUserDto) {
     return this.usersService.update(id, updateUserDto);
   }
 
   @ApiOperation({ summary: 'Delete an user' })
   @ApiParam({ name: 'id', description: 'User unique id', example: 1 })
-  @Delete(':id')
-  @ApiBearerAuth()
-  @UseGuards(AuthGuard('jwt'), PermissionsGuard)
-  @Permissions(AppPermissions.USER_DELETE)
-  remove(@Param('id') id: string) {
+  @Delete(':id')  
+  @Auth(AppPermissions.USER_DELETE)
+  async remove(@Param('id') id: string) {
     return this.usersService.remove(id);
   }
 }

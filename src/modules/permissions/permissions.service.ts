@@ -9,12 +9,14 @@ import { CreatePermissionDto } from './dto/create-permission.dto';
 import { UpdatePermissionDto } from './dto/update-permission.dto';
 import { PaginationDto } from '../../shared/dtos/pagination.dto';
 import { Permission } from './entities/permission.entity';
+import { PaginationService } from 'src/shared/services/pagination.service';
 
 @Injectable()
 export class PermissionsService {
   constructor(
     @InjectRepository(Permission)
     private permissionsRepository: Repository<Permission>,
+    private readonly paginationService: PaginationService,
   ) {}
 
   async create(createPermissionDto: CreatePermissionDto): Promise<Permission> {
@@ -27,19 +29,20 @@ export class PermissionsService {
     return this.permissionsRepository.save(createPermissionDto);
   }
 
-  async findAll(paginationDto: PaginationDto) {
+  async findAll(paginationDto: PaginationDto) {    
     const { page, limit } = paginationDto;
-    if (!page && !limit) {
-      const permissions = await this.permissionsRepository.find({order: { id: 'ASC' }});
-      return {
-        data: permissions,
-        meta: {
-          page: 1,
-          total_pages: 1,
-        },
-      };
-    }
-    return this.getPaginatedPermissions(page, limit);
+    const result = await this.paginationService.paginate(
+      this.permissionsRepository,
+      page || 1,
+      limit || Number.MAX_SAFE_INTEGER,
+      {
+        order: { id: 'ASC' },
+      },
+    );
+    return {
+      data: result.data,
+      meta: result.meta,
+    };    
   }  
 
   async findOne(id: number) {
@@ -70,21 +73,5 @@ export class PermissionsService {
       throw new NotFoundException('Permission not found');
     }
     return this.permissionsRepository.delete(id);
-  }
-
-  private async getPaginatedPermissions(page, limit) {
-    const skippedItems = (page - 1) * limit;
-    const [permissions, total] = await this.permissionsRepository.findAndCount({
-      skip: skippedItems,
-      take: limit,
-      order: { id: 'ASC' },
-    });
-    return {
-      data: permissions,
-      meta: {
-        page: +page,
-        total_pages: Math.ceil(total / limit),
-      },
-    };
-  }
+  }  
 }

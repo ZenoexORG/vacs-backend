@@ -13,10 +13,13 @@ import { IncidentsModule } from './modules/incidents/incidents.module';
 import { AccessLogsModule } from './modules/access_logs/access-logs.module';
 import { AuthModule } from './modules/auth/auth.module';
 import { DashboardModule } from './modules/dashboard/dashboard.module';
+import { ReportModule } from './modules/daily_reports/daily_reports.module';
+import { ScheduleModule } from '@nestjs/schedule';
 
 @Module({
   imports: [
     ConfigModule.forRoot({ isGlobal: true }),
+    ScheduleModule.forRoot(),
     DatabaseModule,
     AuthModule,
     EmployeesModule,
@@ -28,6 +31,7 @@ import { DashboardModule } from './modules/dashboard/dashboard.module';
     IncidentsModule,
     AccessLogsModule,
     DashboardModule,
+    ReportModule,    
   ],
   controllers: [AppController],
   providers: [AppService],

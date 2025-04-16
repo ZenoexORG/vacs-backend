@@ -6,12 +6,14 @@ import { CreateIncidentDto } from './dto/create-incident.dto';
 import { UpdateIncidentDto } from './dto/update-incident.dto';
 import { PaginationDto } from '../../shared/dtos/pagination.dto';
 import { getMonthRange } from '../../shared/utils/date.utils';
+import { PaginationService } from 'src/shared/services/pagination.service';
 
 @Injectable()
 export class IncidentsService {
   constructor(
     @InjectRepository(Incident)
     private readonly incidentRepository: Repository<Incident>,
+    private readonly paginationService: PaginationService,
   ) {}
 
   create(createIncidentDto: CreateIncidentDto) {
@@ -20,17 +22,18 @@ export class IncidentsService {
 
   async findAll(paginationDto: PaginationDto) {
     const { page, limit } = paginationDto;
-    if (!page && !limit) {
-      const incidents = await this.incidentRepository.find({order: { id: 'ASC' }});
-      return {
-        data: incidents,
-        meta: {
-          page: 1,
-          total_pages: 1,
-        },
-      };
-    }
-    return this.getPaginatedIncidents(page, limit);
+    const result = await this.paginationService.paginate(
+      this.incidentRepository,
+      page || 1,
+      limit || Number.MAX_SAFE_INTEGER,
+      {
+        order: { id: 'ASC' },
+      },
+    );
+    return {
+      data: result.data,
+      meta: result.meta,
+    };
   }
 
   async findOne(id: number) {
@@ -45,7 +48,7 @@ export class IncidentsService {
     const incident = await this.incidentRepository.findOne({ where: { id } });
     if (!incident) {
       throw new NotFoundException('Incident not found');
-    }
+    }    
     return this.incidentRepository.update(id, updateIncidentDto);
   }
 
@@ -62,21 +65,5 @@ export class IncidentsService {
     return this.incidentRepository.count({
       where: { incident_date: Between(start, end) },
     });
-  }
-
-  private async getPaginatedIncidents(page, limit) {
-    const skippedItems = (page - 1) * limit;
-    const [incidents, total] = await this.incidentRepository.findAndCount({
-      skip: skippedItems,
-      take: limit,
-      order: { id: 'ASC' },
-    });
-    return {
-      data: incidents,
-      meta: {
-        page: +page,
-        total_pages: Math.ceil(total / limit),
-      },
-    };
   }
 }

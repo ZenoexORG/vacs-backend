@@ -1,15 +1,17 @@
-import { Controller, Get, Query, UseGuards } from '@nestjs/common';
+import { 
+  Controller, 
+  Get, 
+  Query,   
+  ParseIntPipe
+} from '@nestjs/common';
 import {
   ApiTags,
-  ApiQuery,
-  ApiBearerAuth,
+  ApiQuery,  
   ApiOperation,
 } from '@nestjs/swagger';
 import { DashboardService } from './dashboard.service';
-import { PermissionsGuard } from '../auth/permissions.guard';
-import { Permissions } from '../../shared/decorators/permissions.decorator';
+import { Auth } from '../../shared/decorators/permissions.decorator';
 import { AppPermissions } from '../../shared/enums/permissions.enum';
-import { AuthGuard } from '@nestjs/passport';
 
 @ApiTags('Dashboard')
 @Controller('dashboard')
@@ -22,12 +24,10 @@ export class DashboardController {
     description: 'Month number',
     required: true,
     default: 1,
-  })
+  })    
+  @Auth(AppPermissions.DASHBOARD_READ)
   @Get('stats')
-  @ApiBearerAuth()
-  @UseGuards(AuthGuard('jwt'), PermissionsGuard)
-  @Permissions(AppPermissions.DASHBOARD_READ)
-  async getStats(@Query('month') month: number) {
+  async getStats(@Query('month', ParseIntPipe) month: number) {
     return this.dashboardService.getStats(month);
   }
 
@@ -38,13 +38,11 @@ export class DashboardController {
     required: true,
     default: 1,
   })
-  @ApiQuery({ name: 'year', description: 'Year number', required: false })
+  @ApiQuery({ name: 'year', description: 'Year number', required: false })    
+  @Auth(AppPermissions.DASHBOARD_READ)
   @Get('vehicle-entries')
-  @ApiBearerAuth()
-  @UseGuards(AuthGuard('jwt'), PermissionsGuard)
-  @Permissions(AppPermissions.DASHBOARD_READ)
   async getAccessLogsByMonth(
-    @Query('month') month: number,
+    @Query('month', ParseIntPipe) month: number,
     @Query('year') year?: number,
   ) {
     return this.dashboardService.getAccessLogsByMonth(month, year);
