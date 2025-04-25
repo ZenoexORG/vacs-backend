@@ -1,5 +1,6 @@
 import { IsNotEmpty, IsString, IsDate, IsOptional } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
+import { KindVehicle } from 'src/shared/enums';
 
 export class CreateAccessLogDto {
   @ApiProperty({ description: 'Entry date', example: '2021-10-10T12:00:00Z' })
@@ -18,12 +19,12 @@ export class CreateAccessLogDto {
   vehicle_id: string;
 
   @ApiProperty({ 
-    description: 'Vehicle class', 
+    description: 'Vehicle type', 
     example: 'Authorized',
-    enum: ['Authorized', 'Unathorized', 'Visitor', 'Private', 'Provider'], 
-    enumName: 'VehicleClassType'
+    enum: KindVehicle,
+    enumName: 'VehicleType'
   })
-  @IsNotEmpty({ message: 'Vehicle class is required' })
-  @IsString({ message: 'Vehicle class must be a string' })
-  vehicle_class: string;
+  @IsNotEmpty({ message: 'Vehicle type is required' })
+  @IsString({ message: 'Vehicle type must be a string' })
+  vehicle_type: string;
 }

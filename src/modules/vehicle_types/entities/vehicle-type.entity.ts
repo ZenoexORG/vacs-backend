@@ -1,8 +1,8 @@
 import { Entity, Column, PrimaryGeneratedColumn, OneToOne } from 'typeorm';
 import { Vehicle } from '../../vehicles/entities/vehicle.entity';
 
-@Entity('vehicle_classes')
-export class VehicleClass {
+@Entity('vehicle_types')
+export class VehicleType {
   @PrimaryGeneratedColumn()
   id: number;
 
@@ -12,6 +12,6 @@ export class VehicleClass {
   @Column()
   description: string;
 
-  @OneToOne(() => Vehicle, (vehicle) => vehicle.class)
+  @OneToOne(() => Vehicle, (vehicle) => vehicle.type)
   vehicle: Vehicle;
 }

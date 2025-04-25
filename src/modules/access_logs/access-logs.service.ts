@@ -92,7 +92,7 @@ export class AccessLogsService {
     }
     const vehicle = await this.vehicleRepository.findOne({
       where: { id: vehicle_id },
-      relations: ['class'],
+      relations: ['type'],
     });
 
     const latestAccessLog = await this.accessLogRepository.findOne({
@@ -126,7 +126,7 @@ export class AccessLogsService {
       return this.accessLogRepository.save({
         vehicle_id,
         entry_date: newTimestamp.toDate(),
-        vehicle_class: vehicle?.class?.name || 'Unregistered',
+        vehicle_type: vehicle?.type?.name || 'Unregistered',
       })
     }
   }
@@ -170,8 +170,8 @@ export class AccessLogsService {
     const vehicleIds = [...new Set(accessLogs.map((log) => log.vehicle_id))];
     const vehicles = await this.vehicleRepository.find({
       where: { id: In(vehicleIds) },
-      relations: ['class'],
-      select: ['id', 'class', 'owner_id'],
+      relations: ['type'],
+      select: ['id', 'type', 'owner_id'],
     });
     const vehicleMap = new Map(
       vehicles.map((vehicle) => [vehicle.id, vehicle]),

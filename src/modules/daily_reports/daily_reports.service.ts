@@ -9,7 +9,7 @@ import { Cron } from '@nestjs/schedule';
 import { DailyReport } from './entities/report.entity';
 import { AccessLog } from '../access_logs/entities/access-log.entity';
 import { Incident } from '../incidents/entities/incident.entity';
-import { VehicleClass } from '../vehicle_classes/entities/vehicle-class.entity';
+import { VehicleType } from '../vehicle_types/entities/vehicle-type.entity';
 import { DailyReportData } from './interfaces/dailyReportData.interface';
 import { HourlyData } from './interfaces/hourlyData.interface';
 import { DateRangeDto } from './dto/date-range.dto';
@@ -28,8 +28,8 @@ export class ReportService {
 		private readonly accessLogsRepository: Repository<AccessLog>,
 		@InjectRepository(Incident)
 		private readonly incidentsRepository: Repository<Incident>,
-		@InjectRepository(VehicleClass)
-		private readonly vehicleClassesRepository: Repository<VehicleClass>,
+		@InjectRepository(VehicleType)
+		private readonly VehicleTypeesRepository: Repository<VehicleType>,
 	) { }
 
 	@Cron('58 23 * * *')
@@ -59,7 +59,7 @@ export class ReportService {
 	}
 
 	async generateReportData(): Promise<DailyReportData> {
-		const [total_entries, total_exits, total_incidents, active_vehicles, entries_by_hour, exits_by_hour, incidents_by_hour, entries_by_class, incidents_by_class, average_time] =
+		const [total_entries, total_exits, total_incidents, active_vehicles, entries_by_hour, exits_by_hour, incidents_by_hour, entries_by_type, incidents_by_type, average_time] =
 			await Promise.all([
 				this.getTotalEntries(),
 				this.getTotalExits(),
@@ -68,8 +68,8 @@ export class ReportService {
 				this.getEntriesByHour(),
 				this.getExitsByHour(),
 				this.getIncidentsByHour(),
-				this.getEntriesByClass(),
-				this.getIncidentsByClass(),
+				this.getEntriesByType(),
+				this.getIncidentsByType(),
 				this.getAverageTime()
 			]);
 		return {
@@ -80,8 +80,8 @@ export class ReportService {
 			entries_by_hour,
 			exits_by_hour,
 			incidents_by_hour,
-			entries_by_class,
-			incidents_by_class,
+			entries_by_type,
+			incidents_by_type,
 			average_time,
 		};
 	}
@@ -197,48 +197,48 @@ export class ReportService {
 		return hourlyData;
 	}
 
-	private async getEntriesByClass(): Promise<HourlyData> {
+	private async getEntriesByType(): Promise<HourlyData> {
 		const { base, tomorrow } = getDateRange();
-		const classData = await this.initializeByClassData();
+		const typeData = await this.initializeByTypeData();
 
-		const entriesByClass = await this.accessLogsRepository
+		const entriesByType = await this.accessLogsRepository
 			.createQueryBuilder('accessLog')
-			.select('accessLog.vehicle_class', 'class')
+			.select('accessLog.vehicle_type', 'type')
 			.addSelect('COUNT(*)', 'count')
 			.where('accessLog.entry_date BETWEEN :base AND :tomorrow', { base, tomorrow })
-			.groupBy('accessLog.vehicle_class')
+			.groupBy('accessLog.vehicle_type')
 			.getRawMany();
 
-		entriesByClass.forEach(entry => {
-			classData[entry.class] = parseInt(entry.count);
+		entriesByType.forEach(entry => {
+			typeData[entry.type] = parseInt(entry.count);
 		});
-		return classData;
+		return typeData;
 	}
 
-	private async getIncidentsByClass(): Promise<HourlyData> {
+	private async getIncidentsByType(): Promise<HourlyData> {
 		const { base, tomorrow } = getDateRange();
-		const classData = await this.initializeByClassData();
+		const typeData = await this.initializeByTypeData();
 
-		const incidentsByClass = await this.incidentsRepository
+		const incidentsByType = await this.incidentsRepository
 			.createQueryBuilder('incident')
 			.leftJoin('vehicles', 'vehicle', 'incident.vehicle_id = vehicle.id')
-			.leftJoin('vehicle_classes', 'vehicleClass', 'vehicle.class_id = vehicleClass.id')
-			.select('COALESCE(vehicleClass.name, \'Unregistered\')', 'class')
+			.leftJoin('vehicle_types', 'VehicleType', 'vehicle.type_id = VehicleType.id')
+			.select('COALESCE(VehicleType.name, \'Unregistered\')', 'type')
 			.addSelect('COUNT(*)', 'count')
 			.where('incident.incident_date BETWEEN :base AND :tomorrow', { base, tomorrow })
-			.groupBy('COALESCE(vehicleClass.name, \'Unregistered\')')
+			.groupBy('COALESCE(VehicleType.name, \'Unregistered\')')
 			.getRawMany();
 
-		incidentsByClass.forEach(entry => {
-			classData[entry.class] = parseInt(entry.count);
+		incidentsByType.forEach(entry => {
+			typeData[entry.type] = parseInt(entry.count);
 		});
-		return classData;
+		return typeData;
 	}
 
-	private async initializeByClassData(): Promise<HourlyData> {
-		const vehicleClasses = await this.vehicleClassesRepository.find();
-		return vehicleClasses.reduce((acc, vehicleClass) => {
-			acc[vehicleClass.name] = 0;
+	private async initializeByTypeData(): Promise<HourlyData> {
+		const VehicleTypees = await this.VehicleTypeesRepository.find();
+		return VehicleTypees.reduce((acc, VehicleType) => {
+			acc[VehicleType.name] = 0;
 			return acc;
 		}, {} as HourlyData);
 	}

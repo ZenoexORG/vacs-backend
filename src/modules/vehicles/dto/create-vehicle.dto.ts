@@ -6,9 +6,9 @@ export class CreateVehicleDto {
   @IsString({ message: 'License plate must be a string' })
   id: string;
 
-  @ApiProperty({ description: 'Vehicle class id', example: 1 })
-  @IsInt({ message: 'Class id must be a number' })
-  class_id: number;
+  @ApiProperty({ description: 'Vehicle type id', example: 1 })
+  @IsInt({ message: 'Type id must be a number' })
+  type_id: number;
 
   @ApiProperty({ description: 'Vehicle user id', example: 1 })
   @IsInt({ message: 'User id must be a string' })

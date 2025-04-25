@@ -3,7 +3,7 @@ import {
   NotFoundException,
   BadRequestException,
 } from '@nestjs/common';
-import { VehicleClass } from '../vehicle_classes/entities/vehicle-class.entity';
+import { VehicleType } from '../vehicle_types/entities/vehicle-type.entity';
 import { PaginationDto } from '../../shared/dtos/pagination.dto';
 import { CreateVehicleDto } from './dto/create-vehicle.dto';
 import { UpdateVehicleDto } from './dto/update-vehicle.dto';
@@ -20,8 +20,8 @@ export class VehiclesService {
     private readonly vehicleRepository: Repository<Vehicle>,
     @InjectRepository(User)
     private readonly userRepository: Repository<User>,
-    @InjectRepository(VehicleClass)
-    private readonly vehicleClassRepository: Repository<VehicleClass>,
+    @InjectRepository(VehicleType)
+    private readonly vehicleTypeRepository: Repository<VehicleType>,
     private readonly paginationService: PaginationService,
   ) {}
 
@@ -38,11 +38,11 @@ export class VehiclesService {
     if (!user) {
       throw new NotFoundException('User not found');
     }
-    const vehicleClass = await this.vehicleClassRepository.findOne({
-      where: { id: createVehicleDto.class_id },
+    const vehicleType = await this.vehicleTypeRepository.findOne({
+      where: { id: createVehicleDto.type_id },
     });
-    if (!vehicleClass) {
-      throw new NotFoundException('Vehicle class not found');
+    if (!vehicleType) {
+      throw new NotFoundException('Vehicle type not found');
     }
     return this.vehicleRepository.save(createVehicleDto);
   }
@@ -54,7 +54,7 @@ export class VehiclesService {
       page || 1,
       limit || Number.MAX_SAFE_INTEGER,
       {
-        relations: { class: true, user: true },
+        relations: { type: true, user: true },
         order: { id: 'ASC' },
       },
     )
@@ -68,7 +68,7 @@ export class VehiclesService {
   async findOne(id: string){
     const vehicle = await this.vehicleRepository.findOne({
       where: { id },
-      relations: ['class', 'user'],
+      relations: ['type', 'user'],
     });
     if (!vehicle) {
       throw new NotFoundException('Vehicle not found');
@@ -91,12 +91,12 @@ export class VehiclesService {
       }
     }
     
-    if (updateVehicleDto.class_id) {
-      const vehicleClass = await this.vehicleClassRepository.findOne({
-      where: { id: updateVehicleDto.class_id },
+    if (updateVehicleDto.type_id) {
+      const vehicleType = await this.vehicleTypeRepository.findOne({
+      where: { id: updateVehicleDto.type_id },
       });
-      if (!vehicleClass) {
-      throw new NotFoundException('Vehicle class not found');
+      if (!vehicleType) {
+      throw new NotFoundException('Vehicle type not found');
       }
     }
     return this.vehicleRepository.update(id, updateVehicleDto);
@@ -113,7 +113,7 @@ export class VehiclesService {
   private formatVehicles(vehicles: Vehicle[]){
     return vehicles.map((vehicle) => ({
       id: vehicle.id,
-      type: vehicle.class.name,
+      type: vehicle.type.name,
       owner_id: vehicle.user.id,
       user_fullname: `${vehicle.user.name} ${vehicle.user.last_name}`,
       soat: vehicle.soat ?? null,

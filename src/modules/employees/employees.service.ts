@@ -26,7 +26,7 @@ export class EmployeesService {
         { username: createEmployeeDto.username },
         { id: createEmployeeDto.id },
       ],
-    });
+    });    
     if (existingEmployee) {
       throw new BadRequestException(
         existingEmployee.username === createEmployeeDto.username

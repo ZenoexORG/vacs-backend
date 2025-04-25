@@ -32,11 +32,11 @@ export class CreateReportDto {
 
   @IsObject()
   @IsNotEmpty()
-  entries_by_class: HourlyData;
+  entries_by_type: HourlyData;
 
   @IsObject()
   @IsNotEmpty()
-  incidents_by_class: HourlyData;
+  incidents_by_type: HourlyData;
 
   @IsNumber()
   @IsNotEmpty()

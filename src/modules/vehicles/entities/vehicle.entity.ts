@@ -7,7 +7,7 @@ import {
   ManyToOne,
 } from 'typeorm';
 import { User } from '../../users/entities/user.entity';
-import { VehicleClass } from '../../vehicle_classes/entities/vehicle-class.entity';
+import { VehicleType } from 'src/modules/vehicle_types/entities/vehicle-type.entity';
 
 @Entity('vehicles')
 export class Vehicle {
@@ -15,7 +15,7 @@ export class Vehicle {
   id: string;
 
   @Column()
-  class_id: number;
+  type_id: number;
 
   @Column({ nullable: true })
   owner_id?: string;
@@ -33,7 +33,7 @@ export class Vehicle {
   @JoinColumn({ name: 'owner_id' })
   user: User;
 
-  @OneToOne(() => VehicleClass, (vehicleClass) => vehicleClass.vehicle)
-  @JoinColumn({ name: 'class_id' })
-  class: VehicleClass;
+  @OneToOne(() => VehicleType, (vehicleType) => vehicleType.vehicle)
+  @JoinColumn({ name: 'type_id' })
+  type: VehicleType;
 }

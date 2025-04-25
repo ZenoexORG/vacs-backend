@@ -26,9 +26,12 @@ export class RolesService {
   ) {}
 
   async create(createRoleDto: CreateRoleDto): Promise<Role> {
+    if (!createRoleDto.type) {
+      throw new BadRequestException('Role type is required');
+    }
     const existingRole = await this.rolesRepository.findOne({
       where: { name: createRoleDto.name },
-    });
+    });    
     if (existingRole) {
       throw new BadRequestException('Role already exists');
     }
@@ -59,7 +62,7 @@ export class RolesService {
   async findOne(id: number) {
     const role = await this.rolesRepository.findOne({
       where: { id },
-      relations: ['users', 'employees', 'permissions'],
+      relations: ['employees', 'permissions'],
     });
     if (!role) {
       throw new NotFoundException('Role not found');

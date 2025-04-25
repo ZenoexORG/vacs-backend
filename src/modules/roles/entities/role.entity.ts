@@ -16,8 +16,11 @@ export class Role {
   @Column()
   name: string;
 
-  @Column({ nullable: true })
-  description?: string;  
+  @Column()
+  type: string;
+
+  @Column({ default: '#000000' })
+  color: string;
 
   @OneToMany(() => Employee, (employee) => employee.role)
   employees?: Employee[];

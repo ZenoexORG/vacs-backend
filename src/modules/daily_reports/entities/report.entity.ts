@@ -30,10 +30,10 @@ export class DailyReport {
     incidents_by_hour: Record<string, number>;
 
     @Column({type: 'jsonb', default: '{}'})
-    entries_by_class: Record<string, number>;
+    entries_by_type: Record<string, number>;
 
     @Column({type: 'jsonb', default: '{}'})
-    incidents_by_class: Record<string, number>;
+    incidents_by_type: Record<string, number>;
 
     @Column({type: 'float', default: 0})
     average_time: number;

@@ -15,5 +15,5 @@ export class AccessLog {
   vehicle_id: string;
 
   @Column()
-  vehicle_class: string;
+  vehicle_type: string;
 }

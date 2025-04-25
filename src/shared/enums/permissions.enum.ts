@@ -14,10 +14,10 @@ export enum AppPermissions {
     VEHICLE_UPDATE = 'vehicles:edit',
     VEHICLE_DELETE = 'vehicles:delete',
     
-    VEHICLE_CLASSES_CREATE = 'vehicle-classes:write',
-    VEHICLE_CLASSES_READ = 'vehicle-classes:read',
-    VEHICLE_CLASSES_UPDATE = 'vehicle-classes:edit',
-    VEHICLE_CLASSES_DELETE = 'vehicle-classes:delete',
+    VEHICLE_TYPES_CREATE = 'vehicle-types:write',
+    VEHICLE_TYPES_READ = 'vehicle-types:read',
+    VEHICLE_TYPES_UPDATE = 'vehicle-types:edit',
+    VEHICLE_TYPES_DELETE = 'vehicle-types:delete',
         
     USER_CREATE = 'users:write',
     USER_READ = 'users:read',

@@ -40,15 +40,15 @@ export class ReportDto {
 
 	@ApiProperty({
 		example: { "Authorized": 5, "Private": 3 },
-		description: 'Entries grouped by class/type',
+		description: 'Entries grouped by type',
 	})
-	entries_by_class: HourlyData;
+	entries_by_type: HourlyData;
 
 	@ApiProperty({
 		example: { "Authorized": 2, "Private": 1 },
-		description: 'Incidents grouped by class/type',
+		description: 'Incidents grouped by type',
 	})
-	incidents_by_class: HourlyData;
+	incidents_by_type: HourlyData;
 
 	@ApiProperty({ example: 15.5, description: 'Average time spent (in minutes)' })
 	average_time: number;
