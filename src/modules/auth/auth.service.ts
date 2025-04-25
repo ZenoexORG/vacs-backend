@@ -27,7 +27,7 @@ export class AuthService {
       permissions: user.role?.permissions?.map((p) => p.name) || [],
     };
     return {
-      access_token: this.jwtService.sign(payload),
+      token: this.jwtService.sign(payload),
     };
   }
 }

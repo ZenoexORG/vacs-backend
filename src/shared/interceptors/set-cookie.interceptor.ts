@@ -1,29 +1,25 @@
-import {
-  CallHandler,
-  ExecutionContext,
-  Injectable,
-  NestInterceptor,
-} from '@nestjs/common';
-import { hours } from '@nestjs/throttler';
-import { Response } from 'express';
-import { Observable, tap } from 'rxjs';
+import {Injectable, NestInterceptor, ExecutionContext, CallHandler } from '@nestjs/common';
+import { Observable } from 'rxjs';
+import { map } from 'rxjs/operators';
 
 @Injectable()
 export class SetCookieInterceptor implements NestInterceptor {
-  intercept(context: ExecutionContext, next: CallHandler): Observable<any> {
-    const response = context.switchToHttp().getResponse<Response>();
-    response.clearCookie('token', { httpOnly: true, secure: true });
-
+  intercept(context: ExecutionContext, next: CallHandler<any>): Observable<any> | Promise<Observable<any>> {
     return next.handle().pipe(
-      tap((data) => {
-        const token = data.access_token;
-
-        response.cookie('token', token, {
-          signed: true,
-          httpOnly: true,
-          secure: true,
-          maxAge: hours(12),
-        });
+      map((data) => {
+        const response = context.switchToHttp().getResponse();
+        if (data && data.token){
+          response.cookie('token', data.token, {
+            httpOnly: true,
+            secure: process.env.NODE_ENV === 'production',
+            sameSite: 'strict',
+            maxAge: 12 * 60 * 60 * 1000, // 12 hours
+            path: '/',            
+          });
+          const { token, ...rest } = data;
+          return rest;
+        }
+        return data;
       }),
     );
   }

@@ -1,13 +1,6 @@
-import {
-  Controller,
-  Post,
-  Body,
-  HttpException,
-  HttpStatus,
-  UseInterceptors,
-} from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiBody } from '@nestjs/swagger';
+import { Controller, Post, Body, HttpException, HttpStatus, UseInterceptors } from '@nestjs/common';
 import { SetCookieInterceptor } from 'src/shared/interceptors/set-cookie.interceptor';
+import { ApiTags, ApiOperation, ApiBody } from '@nestjs/swagger';
 import { AuthService } from './auth.service';
 import { LoginDto } from './dto/login.dto';
 
