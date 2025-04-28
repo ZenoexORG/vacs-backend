@@ -1,20 +1,5 @@
-import {
-  Controller,
-  Get,
-  Post,
-  Body,
-  Param,
-  Delete,
-  Patch,
-  Query,  
-} from '@nestjs/common';
-import {
-  ApiTags,
-  ApiOperation,
-  ApiParam,
-  ApiBody,
-  ApiQuery,  
-} from '@nestjs/swagger';
+import { Controller, Get, Post, Body, Param, Delete, Patch, Query } from '@nestjs/common';
+import { ApiTags, ApiOperation, ApiParam, ApiBody, ApiQuery } from '@nestjs/swagger';
 import { EmployeesService } from './employees.service';
 import { CreateEmployeeDto } from './dto/create-employee.dto';
 import { UpdateEmployeeDto } from './dto/update-employee.dto';
@@ -28,34 +13,24 @@ export class EmployeesController {
 
   @ApiOperation({ summary: 'Create an employee' })
   @ApiBody({ type: CreateEmployeeDto })  
-  @Auth(AppPermissions.EMPLOYEE_CREATE)
+  @Auth(AppPermissions.EMPLOYEES_CREATE)
   @Post()  
   async create(@Body() createEmployeeDto: CreateEmployeeDto) {
     return this.employeesService.create(createEmployeeDto);
   }
 
   @ApiOperation({ summary: 'Get all employees' })
-  @ApiQuery({
-    name: 'limit',
-    description: 'Number of items per page',
-    required: false,
-    default: 10,
-  })
-  @ApiQuery({
-    name: 'page',
-    description: 'Page number',
-    required: false,
-    default: 1,
-  })
+  @ApiQuery({ name: 'limit', description: 'Number of items per page', required: false, default: 10,})
+  @ApiQuery({ name: 'page', description: 'Page number', required: false, default: 1,})
   @Get()  
-  @Auth(AppPermissions.EMPLOYEE_READ)
+  @Auth(AppPermissions.EMPLOYEES_VIEW)
   async findAll(@Query() paginationDto) {
     return this.employeesService.findAll(paginationDto);
   }
 
   @ApiOperation({ summary: 'Get an employee by id' })
   @ApiParam({ name: 'id', description: 'Employee unique id', example: 1 })
-  @Auth(AppPermissions.EMPLOYEE_READ)
+  @Auth(AppPermissions.EMPLOYEES_VIEW)
   @Get(':id')  
   async findOne(@Param('id') id: string) {
     return this.employeesService.findOne(id);
@@ -63,7 +38,7 @@ export class EmployeesController {
 
   @ApiOperation({ summary: 'Update an employee' })
   @ApiParam({ name: 'id', description: 'Employee unique id', example: 1 })
-  @Auth(AppPermissions.EMPLOYEE_UPDATE)
+  @Auth(AppPermissions.EMPLOYEES_EDIT)
   @Patch(':id')  
   async update(
     @Param('id') id: string,
@@ -74,7 +49,7 @@ export class EmployeesController {
 
   @ApiOperation({ summary: 'Delete an employee' })
   @ApiParam({ name: 'id', description: 'Employee unique id', example: 1 })  
-  @Auth(AppPermissions.EMPLOYEE_DELETE)
+  @Auth(AppPermissions.EMPLOYEES_DELETE)
   @Delete(':id')  
   async remove(@Param('id') id: string) {
     return this.employeesService.remove(id);

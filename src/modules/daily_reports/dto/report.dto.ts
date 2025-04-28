@@ -6,7 +6,7 @@ export class ReportDto {
 	id: number;
 
 	@ApiProperty({ example: '2024-04-14', description: 'Date the report belongs to (YYYY-MM-DD)' })
-	report_date: string;
+	report_date: Date;
 
 	@ApiProperty({ example: 250, description: 'Total number of entries for the day' })
 	total_entries: number;

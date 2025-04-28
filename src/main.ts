@@ -15,11 +15,20 @@ async function bootstrap() {
   })
 
   const document = SwaggerModule.createDocument(app, swaggerConfig);
-  SwaggerModule.setup('docs', app, document);
+  SwaggerModule.setup('docs', app, document, {
+    swaggerOptions: {
+      securityDefinitions: {
+        'X-API-KEY': {
+          type: 'apiKey',
+          name: 'X-API-KEY',
+          in: 'header',
+        },
+      },
+    }
+  });
 
   app.use(cookieParser(process.env.COOKIE_SECRET || 'super_safe_secret'));
-  app.useGlobalInterceptors(new LocalToUTCInterceptor(), new UTCToLocalInterceptor());
-
+  app.useGlobalInterceptors(new LocalToUTCInterceptor(), new UTCToLocalInterceptor());  
   await app.listen(process.env.PORT ?? 3000);
 }
 

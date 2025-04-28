@@ -24,3 +24,13 @@ export function getDateRange(baseDate: Date = new Date()) {
     tomorrow: tomorrow.utc().toDate()
   };
 }
+
+export function formatReportDate(date: Date | string): string {  
+  const d = moment.tz(date, 'America/Bogota');
+  return d.format('DD [de] MMMM [de] YYYY');
+}
+
+export function formatDate(date: Date | string): string {
+  const d = moment.tz(date, 'America/Bogota');
+  return d.format('YYYY-MM-DD');
+}

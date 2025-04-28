@@ -28,7 +28,7 @@ export class PermissionsController {
 
   @ApiOperation({ summary: 'Create a permission' })
   @ApiBody({ type: CreatePermissionDto })    
-  @Auth(AppPermissions.PERMISSION_CREATE)
+  @Auth(AppPermissions.PERMISSIONS_CREATE)
   @Post()
   async create(@Body() createPermissionDto: CreatePermissionDto) {
     return this.permissionsService.create(createPermissionDto);
@@ -47,7 +47,7 @@ export class PermissionsController {
     required: false,
     default: 1,
   })  
-  @Auth(AppPermissions.PERMISSION_READ)
+  @Auth(AppPermissions.PERMISSIONS_VIEW)
   @Get()
   async findAll(@Query() paginationDto) {
     return this.permissionsService.findAll(paginationDto);
@@ -60,7 +60,7 @@ export class PermissionsController {
     example: 1,
     type: Number,
   })    
-  @Auth(AppPermissions.PERMISSION_READ)
+  @Auth(AppPermissions.PERMISSIONS_VIEW)
   @Get(':id')
   async findOne(@Param('id') id: string) {
     return this.permissionsService.findOne(+id);
@@ -73,7 +73,7 @@ export class PermissionsController {
     example: 1,
     type: Number,
   })    
-  @Auth(AppPermissions.PERMISSION_UPDATE)
+  @Auth(AppPermissions.PERMISSIONS_EDIT)
   @Patch(':id')
   async update(
     @Param('id') id: string,
@@ -89,7 +89,7 @@ export class PermissionsController {
     example: 1,
     type: Number,
   })    
-  @Auth(AppPermissions.PERMISSION_DELETE)
+  @Auth(AppPermissions.PERMISSIONS_DELETE)
   @Delete(':id')
   async remove(@Param('id') id: string) {
     return this.permissionsService.remove(+id);

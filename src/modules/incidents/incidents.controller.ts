@@ -47,7 +47,7 @@ export class IncidentsController {
     required: false,
     default: 1,
   })    
-  @Auth(AppPermissions.INCIDENTS_READ)
+  @Auth(AppPermissions.INCIDENTS_VIEW)
   @Get()
   async findAll(@Query() paginationDto) {
     return this.incidentsService.findAll(paginationDto);
@@ -55,7 +55,7 @@ export class IncidentsController {
 
   @ApiOperation({ summary: 'Get an incident by id' })
   @ApiParam({ name: 'id', description: 'Incident unique id', example: 1 })    
-  @Auth(AppPermissions.INCIDENTS_READ)
+  @Auth(AppPermissions.INCIDENTS_VIEW)
   @Get(':id')
   async findOne(@Param('id') id: number) {
     return this.incidentsService.findOne(id);
@@ -64,7 +64,7 @@ export class IncidentsController {
   @ApiOperation({ summary: 'Update an incident' })
   @ApiParam({ name: 'id', description: 'Incident unique id', example: 1 })
   @ApiBody({ type: UpdateIncidentDto })  
-  @Auth(AppPermissions.INCIDENTS_UPDATE)  
+  @Auth(AppPermissions.INCIDENTS_EDIT)  
   @Patch(':id')
   async update(
     @Param('id') id: number,

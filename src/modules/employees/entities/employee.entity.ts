@@ -41,6 +41,9 @@ export class Employee {
   @Column()
   password: string;
 
+  @Column({ type: 'timestamptz', default: () => 'CURRENT_TIMESTAMP' })
+  created_at: Date;
+
   @ManyToOne(() => Role, (role) => role.employees, {
     nullable: true,
     onDelete: 'SET NULL',

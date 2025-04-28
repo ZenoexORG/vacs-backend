@@ -1,30 +1,20 @@
-import { IsNotEmpty, IsString, IsDate, IsOptional } from 'class-validator';
+import { IsNotEmpty, IsString, Matches, IsISO8601  } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
-import { KindVehicle } from 'src/shared/enums';
 
 export class CreateAccessLogDto {
-  @ApiProperty({ description: 'Entry date', example: '2021-10-10T12:00:00Z' })
-  @IsNotEmpty({ message: 'Entry date is required' })
-  @IsDate({ message: 'Entry date must be a date' })
-  entry_date: Date;
-
-  @ApiProperty({ description: 'Exit date', example: '2021-10-10T12:00:00Z' })
-  @IsDate({ message: 'Exit date must be a date' })
-  @IsOptional()
-  exit_date: Date;
-
-  @ApiProperty({ description: 'Vehicle id', example: 'ABC123' })
-  @IsNotEmpty({ message: 'Vehicle id is required' })
-  @IsString({ message: 'Vehicle id must be a string' })
+  @ApiProperty({ description: 'ID (plate) of the vehicle', type: String, required: true, example: 'ABC123'})
+  @IsNotEmpty()
+  @IsString()
+  @Matches(/^[A-Z0-9]{6}$/, { message: 'vehicle_id must be 6 alphanumeric characters' })
   vehicle_id: string;
 
-  @ApiProperty({ 
-    description: 'Vehicle type', 
-    example: 'Authorized',
-    enum: KindVehicle,
-    enumName: 'VehicleType'
-  })
-  @IsNotEmpty({ message: 'Vehicle type is required' })
-  @IsString({ message: 'Vehicle type must be a string' })
-  vehicle_type: string;
+  @ApiProperty({ description: 'Timestamp of the access log', type: String, required: true, example: '2023-10-01T12:00:00Z'})
+  @IsNotEmpty()
+  @IsISO8601({ strict: true }, { message: 'Invalid date format. Expected ISO 8601 format' })
+  timestamp: Date;
+
+  @ApiProperty({ description: 'Type of access (entry or exit)', type: String, required: true, example: 'entry'})
+  @IsNotEmpty()
+  @IsString()
+  access_type: string;
 }

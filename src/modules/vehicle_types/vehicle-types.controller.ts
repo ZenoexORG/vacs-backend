@@ -48,7 +48,7 @@ export class VehicleTypesController {
     required: false,
     default: 10,
   })    
-  @Auth(AppPermissions.VEHICLE_TYPES_READ)
+  @Auth(AppPermissions.VEHICLE_TYPES_VIEW)
   @Get()
   async findAll(@Query() paginationDto: PaginationDto) {
     return this.VehicleTypesService.findAll(paginationDto);
@@ -56,7 +56,7 @@ export class VehicleTypesController {
 
   @ApiOperation({ summary: 'Get a vehicle type by id' })
   @ApiParam({ name: 'id', description: 'Vehicle type unique id', example: 1 })  
-  @Auth(AppPermissions.VEHICLE_TYPES_READ)
+  @Auth(AppPermissions.VEHICLE_TYPES_VIEW)
   @Get(':id')  
   async findOne(@Param('id') id: string) {
     return this.VehicleTypesService.findOne(+id);
@@ -64,7 +64,7 @@ export class VehicleTypesController {
 
   @ApiOperation({ summary: 'Update a vehicle type' })
   @ApiParam({ name: 'id', description: 'Vehicle type unique id', example: 1 })    
-  @Auth(AppPermissions.VEHICLE_TYPES_UPDATE)
+  @Auth(AppPermissions.VEHICLE_TYPES_EDIT)
   @Patch(':id')
   async update(
     @Param('id') id: string,

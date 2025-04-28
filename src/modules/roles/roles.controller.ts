@@ -30,7 +30,7 @@ export class RolesController {
 
   @ApiOperation({ summary: 'Create a role' })
   @ApiBody({ type: CreateRoleDto })  
-  @Auth(AppPermissions.ROLE_CREATE)
+  @Auth(AppPermissions.ROLES_CREATE)
   @Post()
   async create(@Body() createRoleDto: CreateRoleDto) {
     return this.rolesService.create(createRoleDto);
@@ -49,7 +49,7 @@ export class RolesController {
     required: false,
     default: 1,
   })    
-  @Auth(AppPermissions.ROLE_READ)
+  @Auth(AppPermissions.ROLES_VIEW)
   @Get()
   async findAll(@Query() paginationDto) {
     return this.rolesService.findAll(paginationDto);
@@ -62,7 +62,7 @@ export class RolesController {
     example: 1,
     type: Number,
   })    
-  @Auth(AppPermissions.ROLE_READ)
+  @Auth(AppPermissions.ROLES_VIEW)
   @Get(':id')
   async findOne(@Param('id') id: string) {
     return this.rolesService.findOne(+id);
@@ -76,7 +76,7 @@ export class RolesController {
     type: Number,
   })
   @ApiBody({ type: UpdateRoleDto })
-  @Auth(AppPermissions.ROLE_UPDATE)
+  @Auth(AppPermissions.ROLES_EDIT)
   @Patch(':id')  
   async update(@Param('id') id: string, @Body() updateRoleDto: UpdateRoleDto) {
     return this.rolesService.update(+id, updateRoleDto);
@@ -89,7 +89,7 @@ export class RolesController {
     example: 1,
     type: Number,
   })    
-  @Auth(AppPermissions.ROLE_DELETE)
+  @Auth(AppPermissions.ROLES_DELETE)
   @Delete(':id')
   async remove(@Param('id') id: string) {
     return this.rolesService.remove(+id);
@@ -103,7 +103,7 @@ export class RolesController {
     type: Number,
   })
   @ApiBody({ type: AssignPermissionsDto })    
-  @Auth(AppPermissions.PERMISSION_ASSIGN)
+  @Auth(AppPermissions.PERMISSIONS_ASSIGN)
   @Post(':id/permissions')
   async assignPermissions(
     @Param('id') id: string,
@@ -121,7 +121,7 @@ export class RolesController {
   })
   @ApiBody({ type: AssignPermissionsDto })
   @Delete(':id/permissions')  
-  @Auth(AppPermissions.PERMISSION_UNASSIGN)
+  @Auth(AppPermissions.PERMISSIONS_UNASSIGN)
   async removePermissions(
     @Param('id') id: string,
     @Body() deletePermissionsDto: DeletePermissionsDto,

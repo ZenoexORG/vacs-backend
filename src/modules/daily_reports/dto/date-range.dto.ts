@@ -1,5 +1,6 @@
 import { ApiProperty } from "@nestjs/swagger";
 import { IsDate } from "class-validator";
+import { Type } from "class-transformer";
 
 export class DateRangeDto {
   @ApiProperty({
@@ -8,6 +9,7 @@ export class DateRangeDto {
     type: Date,
   })
   @IsDate()
+  @Type(() => Date)
   startDate: Date;
 
   @ApiProperty({
@@ -16,5 +18,6 @@ export class DateRangeDto {
     type: Date,
   })
   @IsDate()
+  @Type(() => Date)
   endDate: Date;
 }
