@@ -5,7 +5,7 @@ import {
 } from '@nestjs/common';
 import { Permission } from '../permissions/entities/permission.entity';
 import { AssignPermissionsDto } from './dto/assign-permissions.dto';
-import { DeletePermissionsDto } from './dto/delete-permissions.dto';
+import { UpdateRolePermissionsDto } from './dto/update-permissions.dto';
 import { CreateRoleDto } from './dto/create-role.dto';
 import { UpdateRoleDto } from './dto/update-role.dto';
 import { InjectRepository } from '@nestjs/typeorm';
@@ -103,45 +103,48 @@ export class RolesService {
       where: { id: In(assignPermissionsDto.permissionIds) },
     });
     role.permissions = [...(role.permissions || []), ...permissions];
-    return this.rolesRepository.save(role);
-  }
-
-  async removePermissions(
-    id: number,
-    deletePermissionsDto: DeletePermissionsDto,
-  ) {
-    const role = await this.rolesRepository.findOne({
-      where: { id },
-      relations: ['permissions'],
+    const existingPermissions = await this.permissionsRepository.find({
+      where: { id: In(role.permissions.map(permission => permission.id)) },
     });
-    if (!role) throw new NotFoundException('Role not found');
-    role.permissions = (role.permissions ?? []).filter(
-      (permission) =>
-        !deletePermissionsDto.permissionIds.includes(permission.id),
-    );
-    return this.rolesRepository.save(role);
-  }
-
-  private async getPaginatedRoles(page, limit) {
-    const skippedItems = (page - 1) * limit;
-    const [roles, total] = await this.rolesRepository.findAndCount({
-      skip: skippedItems,
-      take: limit,
-      relations: ['permissions'],
-      order: { id: 'ASC' },
-    });
-    const formattedRoles = roles.map((role) => ({
-      ...role,
-      permissions: this.formatPermissions(role.permissions ?? []),
-    }));
+    if (existingPermissions.length !== role.permissions.length) {
+      throw new BadRequestException('Some permissions do not exist');
+    }
+    const newRole = await this.rolesRepository.save(role);
     return {
-      data: formattedRoles,
-      meta: {
-        page: +page,
-        total_pages: Math.ceil(total / limit),
-      },
+      ...newRole,
+      permissions: this.formatPermissions(newRole.permissions ?? []),
     };
   }
+
+  async updatePermissions(roleId: number, updateRolePermissionsDto: UpdateRolePermissionsDto) {
+    const { permissionIds } = updateRolePermissionsDto;
+        
+    const role = await this.rolesRepository.findOne({
+      where: { id: roleId },
+      relations: ['permissions'],
+    });
+  
+    if (!role) {
+      throw new NotFoundException(`Role with ID ${roleId} not found`);
+    }
+      
+    const permissions = await this.permissionsRepository.find({
+      where: { id: In(permissionIds) },
+    });
+      
+    role.permissions = permissions;
+    const existingPermissions = await this.permissionsRepository.find({
+      where: { id: In(role.permissions.map(permission => permission.id)) },
+    });
+    if (existingPermissions.length !== role.permissions.length) {
+      throw new BadRequestException('Some permissions do not exist');
+    }
+    const newRole = await this.rolesRepository.save(role);
+    return {
+      ...newRole,
+      permissions: this.formatPermissions(newRole.permissions?? []),
+    };    
+  }  
 
   private formatPermissions(permissions: Permission[]): string[] {
     return permissions.map(permission => {

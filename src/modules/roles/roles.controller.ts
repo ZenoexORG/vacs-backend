@@ -1,24 +1,9 @@
-import {
-  Controller,
-  Get,
-  Post,
-  Body,
-  Param,
-  Delete,
-  Patch,
-  Query,  
-} from '@nestjs/common';
-import {
-  ApiTags,
-  ApiOperation,
-  ApiParam,
-  ApiBody,
-  ApiQuery,  
-} from '@nestjs/swagger';
+import { Controller, Get, Post, Body, Param, Delete, Patch, Query } from '@nestjs/common';
+import { ApiTags, ApiOperation, ApiParam, ApiBody, ApiQuery } from '@nestjs/swagger';
 import { CreateRoleDto } from './dto/create-role.dto';
 import { UpdateRoleDto } from './dto/update-role.dto';
 import { AssignPermissionsDto } from './dto/assign-permissions.dto';
-import { DeletePermissionsDto } from './dto/delete-permissions.dto';
+import { UpdateRolePermissionsDto } from './dto/update-permissions.dto';
 import { RolesService } from './roles.service';
 import { Auth } from 'src/shared/decorators/permissions.decorator';
 import { AppPermissions } from 'src/shared/enums/permissions.enum';
@@ -26,10 +11,10 @@ import { AppPermissions } from 'src/shared/enums/permissions.enum';
 @ApiTags('Roles')
 @Controller('roles')
 export class RolesController {
-  constructor(private readonly rolesService: RolesService) {}
+  constructor(private readonly rolesService: RolesService) { }
 
   @ApiOperation({ summary: 'Create a role' })
-  @ApiBody({ type: CreateRoleDto })  
+  @ApiBody({ type: CreateRoleDto })
   @Auth(AppPermissions.ROLES_CREATE)
   @Post()
   async create(@Body() createRoleDto: CreateRoleDto) {
@@ -37,18 +22,8 @@ export class RolesController {
   }
 
   @ApiOperation({ summary: 'Get all roles' })
-  @ApiQuery({
-    name: 'limit',
-    description: 'Number of items per page',
-    required: false,
-    default: 10,
-  })
-  @ApiQuery({
-    name: 'page',
-    description: 'Page number',
-    required: false,
-    default: 1,
-  })    
+  @ApiQuery({ name: 'limit', description: 'Number of items per page', required: false, default: 10 })
+  @ApiQuery({ name: 'page', description: 'Page number', required: false, default: 1 })
   @Auth(AppPermissions.ROLES_VIEW)
   @Get()
   async findAll(@Query() paginationDto) {
@@ -56,12 +31,7 @@ export class RolesController {
   }
 
   @ApiOperation({ summary: 'Get a role by id' })
-  @ApiParam({
-    name: 'id',
-    description: 'Role unique id',
-    example: 1,
-    type: Number,
-  })    
+  @ApiParam({ name: 'id', description: 'Role unique id', example: 1, type: Number })
   @Auth(AppPermissions.ROLES_VIEW)
   @Get(':id')
   async findOne(@Param('id') id: string) {
@@ -77,7 +47,7 @@ export class RolesController {
   })
   @ApiBody({ type: UpdateRoleDto })
   @Auth(AppPermissions.ROLES_EDIT)
-  @Patch(':id')  
+  @Patch(':id')
   async update(@Param('id') id: string, @Body() updateRoleDto: UpdateRoleDto) {
     return this.rolesService.update(+id, updateRoleDto);
   }
@@ -88,7 +58,7 @@ export class RolesController {
     description: 'Role unique id',
     example: 1,
     type: Number,
-  })    
+  })
   @Auth(AppPermissions.ROLES_DELETE)
   @Delete(':id')
   async remove(@Param('id') id: string) {
@@ -102,7 +72,7 @@ export class RolesController {
     example: 1,
     type: Number,
   })
-  @ApiBody({ type: AssignPermissionsDto })    
+  @ApiBody({ type: AssignPermissionsDto })
   @Auth(AppPermissions.PERMISSIONS_ASSIGN)
   @Post(':id/permissions')
   async assignPermissions(
@@ -112,20 +82,20 @@ export class RolesController {
     return this.rolesService.assignPermissions(+id, assignPermissionsDto);
   }
 
-  @ApiOperation({ summary: 'Remove permissions from a role' })
+  @ApiOperation({ summary: 'Update permissions of a role' })
   @ApiParam({
     name: 'id',
     description: 'Role unique id',
     example: 1,
     type: Number,
   })
-  @ApiBody({ type: AssignPermissionsDto })
-  @Delete(':id/permissions')  
+  @ApiBody({ type: UpdateRolePermissionsDto })    
   @Auth(AppPermissions.PERMISSIONS_UNASSIGN)
+  @Patch(':id/permissions')
   async removePermissions(
     @Param('id') id: string,
-    @Body() deletePermissionsDto: DeletePermissionsDto,
+    @Body() updateRolePermissionsDto: UpdateRolePermissionsDto,
   ) {
-    return this.rolesService.removePermissions(+id, deletePermissionsDto);
+    return this.rolesService.updatePermissions(+id, updateRolePermissionsDto);
   }
 }
