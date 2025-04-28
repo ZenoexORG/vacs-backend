@@ -57,10 +57,9 @@ export class VehiclesService {
         relations: { type: true, user: true },
         order: { id: 'ASC' },
       },
-    )
-    const formattedVehicles = this.formatVehicles(result.data);
+    )    
     return {
-      data: formattedVehicles,
+      data: this.formatVehicles(result.data),
       meta: result.meta,
     };    
   }
@@ -115,7 +114,7 @@ export class VehiclesService {
       id: vehicle.id,
       type: vehicle.type.name,
       owner_id: vehicle.user.id,
-      user_fullname: `${vehicle.user.name} ${vehicle.user.last_name}`,
+      USERS_fullname: `${vehicle.user.name} ${vehicle.user.last_name}`,
       soat: vehicle.soat ?? null,
       created_at: vehicle.created_at,
     }));

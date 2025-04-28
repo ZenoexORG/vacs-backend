@@ -25,7 +25,7 @@ export class DashboardController {
     required: true,
     default: 1,
   })    
-  @Auth(AppPermissions.DASHBOARD_READ)
+  @Auth(AppPermissions.DASHBOARD_VIEW)
   @Get('stats')
   async getStats(@Query('month', ParseIntPipe) month: number) {
     return this.dashboardService.getStats(month);
@@ -39,7 +39,7 @@ export class DashboardController {
     default: 1,
   })
   @ApiQuery({ name: 'year', description: 'Year number', required: false })    
-  @Auth(AppPermissions.DASHBOARD_READ)
+  @Auth(AppPermissions.DASHBOARD_VIEW)
   @Get('vehicle-entries')
   async getAccessLogsByMonth(
     @Query('month', ParseIntPipe) month: number,

@@ -28,7 +28,7 @@ export class UsersController {
 
   @ApiOperation({ summary: 'Create an user' })
   @ApiBody({ type: CreateUserDto })    
-  @Auth(AppPermissions.USER_CREATE)
+  @Auth(AppPermissions.USERS_CREATE)
   @Post()
   async create(@Body() createUserDto: CreateUserDto) {
     return this.usersService.create(createUserDto);
@@ -47,7 +47,7 @@ export class UsersController {
     required: false,
     default: 1,
   })    
-  @Auth(AppPermissions.USER_READ)
+  @Auth(AppPermissions.USERS_VIEW)
   @Get()
   async findAll(@Query() paginationDto) {
     return this.usersService.findAll(paginationDto);
@@ -56,7 +56,7 @@ export class UsersController {
   @ApiOperation({ summary: 'Get an user by id' })
   @ApiParam({ name: 'id', description: 'User unique id', example: 1 })
   @Get(':id')  
-  @Auth(AppPermissions.USER_READ)
+  @Auth(AppPermissions.USERS_VIEW)
   async findOne(@Param('id') id: string) {
     return this.usersService.findOne(id);
   }
@@ -64,7 +64,7 @@ export class UsersController {
   @ApiOperation({ summary: 'Update an user' })
   @ApiParam({ name: 'id', description: 'User unique id', example: 1 })
   @Patch(':id')  
-  @Auth(AppPermissions.USER_UPDATE)
+  @Auth(AppPermissions.USERS_EDIT)
   async update(@Param('id') id: string, @Body() updateUserDto: UpdateUserDto) {
     return this.usersService.update(id, updateUserDto);
   }
@@ -72,7 +72,7 @@ export class UsersController {
   @ApiOperation({ summary: 'Delete an user' })
   @ApiParam({ name: 'id', description: 'User unique id', example: 1 })
   @Delete(':id')  
-  @Auth(AppPermissions.USER_DELETE)
+  @Auth(AppPermissions.USERS_DELETE)
   async remove(@Param('id') id: string) {
     return this.usersService.remove(id);
   }

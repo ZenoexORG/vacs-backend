@@ -29,7 +29,7 @@ export class VehiclesController {
 
   @ApiOperation({ summary: 'Create a vehicle' })
   @ApiBody({ type: CreateVehicleDto })    
-  @Auth(AppPermissions.VEHICLE_CREATE)
+  @Auth(AppPermissions.VEHICLES_CREATE)
   @Post()
   async create(@Body() createVehicleDto: CreateVehicleDto) {
     return this.vehiclesService.create(createVehicleDto);
@@ -48,7 +48,7 @@ export class VehiclesController {
     required: false,
     default: 10,
   })
-  @Auth(AppPermissions.VEHICLE_READ)
+  @Auth(AppPermissions.VEHICLES_VIEW)
   @Get()
   async findAll(@Query() paginationDto: PaginationDto) {
     return this.vehiclesService.findAll(paginationDto);
@@ -56,7 +56,7 @@ export class VehiclesController {
 
   @ApiOperation({ summary: 'Get a vehicle by id' })
   @ApiParam({ name: 'id', description: 'Vehicle unique id', example: 1 })    
-  @Auth(AppPermissions.VEHICLE_READ)
+  @Auth(AppPermissions.VEHICLES_VIEW)
   @Get(':id')
   async findOne(@Param('id') id: string) {
     return this.vehiclesService.findOne(id);
@@ -64,7 +64,7 @@ export class VehiclesController {
 
   @ApiOperation({ summary: 'Update a vehicle' })
   @ApiParam({ name: 'id', description: 'Vehicle unique id', example: 1 })    
-  @Auth(AppPermissions.VEHICLE_UPDATE)
+  @Auth(AppPermissions.VEHICLES_EDIT)
   @Patch(':id')
   async update(@Param('id') id: string, @Body() updateVehicleDto: UpdateVehicleDto) {
     return this.vehiclesService.update(id, updateVehicleDto);
@@ -72,7 +72,7 @@ export class VehiclesController {
 
   @ApiOperation({ summary: 'Delete a vehicle' })
   @ApiParam({ name: 'id', description: 'Vehicle unique id', example: 1 })  
-  @Auth(AppPermissions.VEHICLE_DELETE)
+  @Auth(AppPermissions.VEHICLES_DELETE)
   @Delete(':id')
   async remove(@Param('id') id: string) {
     return this.vehiclesService.remove(id);
