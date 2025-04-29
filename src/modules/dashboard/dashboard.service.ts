@@ -1,5 +1,4 @@
 import { Injectable, BadRequestException } from '@nestjs/common';
-import { VehiclesService } from '../vehicles/vehicles.service';
 import { IncidentsService } from '../incidents/incidents.service';
 import { AccessLogsService } from '../access_logs/access-logs.service';
 
@@ -10,24 +9,29 @@ export class DashboardService {
     private readonly accessLogsService: AccessLogsService,
   ) {}
 
-  async getStats(month: number) {
+  async getStats(month: number, year?: number) {
     if (!month || month < 1 || month > 12) {
       throw new BadRequestException('Invalid month');
-    }    
-    
+    }
+    if (year && (year < 1900 || year > new Date().getFullYear())) {
+      throw new BadRequestException('Invalid year');
+    }
+
     const prevMonth = month === 1 ? 12 : month - 1;
-    const prevYear = month === 1 ? new Date().getFullYear() - 1 : new Date().getFullYear();
+    const currentYear = year || new Date().getFullYear();
+    const prevYear = month === 1 ? currentYear - 1 : currentYear;
 
-    const totalVehicles = await this.accessLogsService.countVehiclesByMonth(month);
-    const totalIncidents = await this.incidentsService.countIncidents(month);
-
-    const prevVehicles = await this.accessLogsService.countVehiclesByMonth(prevMonth, prevYear);
-    const prevIncidents = await this.incidentsService.countIncidents(prevMonth, prevYear);
+    const [totalEntries, totalIncidents, prevEntries, prevIncidents] = await Promise.all([
+      this.accessLogsService.countEntriesByMonth(month, year),
+      this.incidentsService.countIncidents(month, year),
+      this.accessLogsService.countEntriesByMonth(prevMonth, prevYear),
+      this.incidentsService.countIncidents(prevMonth, prevYear),
+    ]);
 
     return {
-      vehicles: {
-        value: totalVehicles,
-        percent: this.calculateGrowth(prevVehicles, totalVehicles),
+      entries: {
+        value: totalEntries,
+        percent: this.calculateGrowth(prevEntries, totalEntries),
       },
       incidents: {
         value: totalIncidents,
@@ -40,7 +44,7 @@ export class DashboardService {
     if (prev === 0 && current === 0) return [0, 'up'];
     if (prev === 0) return [100, 'up'];
     const percentage = ((current - prev) / prev) * 100;
-    return [Math.abs(percentage), percentage > 0 ? 'up' : 'down'];
+    return [Math.abs(Math.round(percentage * 100) / 100), percentage > 0 ? 'up' : 'down'];
   }
 
   async getAccessLogsByMonth(month: number, year?: number) {

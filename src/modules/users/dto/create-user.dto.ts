@@ -1,4 +1,4 @@
-import { IsString, IsInt, IsEnum } from 'class-validator';
+import { IsString, IsInt, IsEnum, IsOptional } from 'class-validator';
 import { KindIdentification, Gender } from 'src/shared/enums';
 import { ApiProperty } from '@nestjs/swagger';
 
@@ -22,4 +22,9 @@ export class CreateUserDto {
   @ApiProperty({ description: 'User gender', example: 'M' })
   @IsEnum(Gender, { message: 'Invalid gender' })
   gender: Gender;
+
+  @ApiProperty({ description: 'Employee role id', example: 1 })
+  @IsOptional()
+  @IsInt({ message: 'Role id must be a number' })
+  role_id?: number;
 }

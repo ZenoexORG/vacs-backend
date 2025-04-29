@@ -1,5 +1,7 @@
 export enum KindVehicle {
-  AUTHORIZED = 'AUTHORIZED',
-  PRIVATE = 'PRIVATE',
-  VISITOR = 'VISITOR',
+  AUTHORIZED = 'authorized',
+  PRIVATE = 'private',
+  VISITOR = 'visitor',
+  PROVIDER = 'provider',
+  UNAUTHORIZED = 'unauthorized',
 }

@@ -1,8 +1,4 @@
-import {
-	Injectable,
-	NotFoundException,
-	BadRequestException
-} from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, Between } from 'typeorm';
 import { Cron } from '@nestjs/schedule';
@@ -17,7 +13,6 @@ import { getDateRange } from 'src/shared/utils/date.utils';
 import { hourUtcToLocal } from 'src/shared/utils/hour.utils';
 import { initializeHourlyData } from 'src/shared/utils/hour.utils';
 import { CreateReportDto } from './dto/create-report.dto';
-
 
 @Injectable()
 export class ReportService {
@@ -100,7 +95,7 @@ export class ReportService {
 			...reportData
 		});
 		return this.reportRepository.save(newReport);
-	}	
+	}
 
 	private async getTotalEntries(): Promise<number> {
 		const { base, tomorrow } = getDateRange();
@@ -147,9 +142,10 @@ export class ReportService {
 			.createQueryBuilder('accessLog')
 			.select('EXTRACT(HOUR FROM accessLog.entry_date)', 'hour')
 			.addSelect('COUNT(*)', 'count')
-			.where('accessLog.entry_date BETWEEN :base AND :tomorrow', { base, tomorrow })
+			.where('accessLog.entry_date IS NOT NULL')
+			.andWhere('accessLog.entry_date BETWEEN :base AND :tomorrow', { base, tomorrow })
 			.groupBy('hour')
-			.getRawMany();		
+			.getRawMany();
 
 		entriesByHour.forEach(entry => {
 			const utcHour = parseInt(entry.hour, 10);
@@ -157,7 +153,7 @@ export class ReportService {
 			hourlyData[localHour] = parseInt(entry.count);
 		});
 		return hourlyData;
-	}	
+	}
 
 	private async getExitsByHour(): Promise<HourlyData> {
 		const { base, tomorrow } = getDateRange();
@@ -167,11 +163,12 @@ export class ReportService {
 			.createQueryBuilder('accessLog')
 			.select('EXTRACT(HOUR FROM accessLog.exit_date)', 'hour')
 			.addSelect('COUNT(*)', 'count')
-			.where('accessLog.exit_date BETWEEN :base AND :tomorrow', { base, tomorrow })
+			.where('accessLog.exit_date IS NOT NULL')
+			.andWhere('accessLog.exit_date BETWEEN :base AND :tomorrow', { base, tomorrow })
 			.groupBy('hour')
 			.getRawMany();
 
-		exitsByHour.forEach(entry => {			
+		exitsByHour.forEach(entry => {
 			const localHour = hourUtcToLocal(parseInt(entry.hour, 10));
 			hourlyData[localHour] = parseInt(entry.count);
 		});
@@ -190,7 +187,7 @@ export class ReportService {
 			.groupBy('hour')
 			.getRawMany();
 
-		incidentsByHour.forEach(entry => {			
+		incidentsByHour.forEach(entry => {
 			const localHour = hourUtcToLocal(parseInt(entry.hour, 10));
 			hourlyData[localHour] = parseInt(entry.count);
 		});
@@ -205,7 +202,9 @@ export class ReportService {
 			.createQueryBuilder('accessLog')
 			.select('accessLog.vehicle_type', 'type')
 			.addSelect('COUNT(*)', 'count')
-			.where('accessLog.entry_date BETWEEN :base AND :tomorrow', { base, tomorrow })
+			.where('accessLog.vehicle_type IS NOT NULL')
+			.andWhere('accessLog.entry_date IS NOT NULL')			
+			.andWhere('accessLog.entry_date BETWEEN :base AND :tomorrow', { base, tomorrow })			
 			.groupBy('accessLog.vehicle_type')
 			.getRawMany();
 
@@ -223,10 +222,11 @@ export class ReportService {
 			.createQueryBuilder('incident')
 			.leftJoin('vehicles', 'vehicle', 'incident.vehicle_id = vehicle.id')
 			.leftJoin('vehicle_types', 'VehicleType', 'vehicle.type_id = VehicleType.id')
-			.select('COALESCE(VehicleType.name, \'Unregistered\')', 'type')
+			.select('COALESCE(VehicleType.name, \'unregistered\')', 'type')
 			.addSelect('COUNT(*)', 'count')
-			.where('incident.incident_date BETWEEN :base AND :tomorrow', { base, tomorrow })
-			.groupBy('COALESCE(VehicleType.name, \'Unregistered\')')
+			.where('incident.incident_date IS NOT NULL')			
+			.andWhere('incident.incident_date BETWEEN :base AND :tomorrow', { base, tomorrow })
+			.groupBy('COALESCE(VehicleType.name, \'unregistered\')')
 			.getRawMany();
 
 		incidentsByType.forEach(entry => {

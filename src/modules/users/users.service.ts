@@ -41,6 +41,7 @@ export class UsersService {
       limit || Number.MAX_SAFE_INTEGER,
       {
         order: { id: 'ASC' },
+        relations: { role: true },
       },
     );
     return {
@@ -51,7 +52,8 @@ export class UsersService {
 
   async findOne(id: string) {
     const user = await this.usersRepository.findOne({
-      where: { id },      
+      where: { id },
+      relations: { role: true },     
     });
     if (!user) {
       throw new NotFoundException(`User with ID "${id}" not found`);
@@ -69,6 +71,7 @@ export class UsersService {
     await this.usersRepository.update(id, updateUserDto);
     const updatedUser = await this.usersRepository.findOne({
       where: { id },
+      relations: { role: true },
     });
     if (!updatedUser) {
       throw new NotFoundException(`User with ID "${id}" not found`);
@@ -85,6 +88,6 @@ export class UsersService {
       throw new NotFoundException('User not found');      
     }
     await this.usersRepository.delete(id);
-    this.notificationsService.notifyUserDeleted(existingUser);    
+    this.notificationsService.notifyUserDeleted(existingUser);  
   }
 }

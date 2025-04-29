@@ -6,10 +6,11 @@ import { UsersService } from './users.service';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { User } from './entities/user.entity';
 import { Vehicle } from '../vehicles/entities/vehicle.entity';
+import { Role } from '../roles/entities/role.entity';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([User, Vehicle]),
+    TypeOrmModule.forFeature([User, Vehicle, Role]),
     NotificationsModule,
   ],
   controllers: [UsersController],

@@ -123,9 +123,10 @@ export class VehiclesService {
   private formatVehicles(vehicles: Vehicle[]){
     return vehicles.map((vehicle) => ({
       id: vehicle.id,
+      type_id: vehicle.type.id,
       type: vehicle.type.name,
       owner_id: vehicle.user.id,
-      USERS_fullname: `${vehicle.user.name} ${vehicle.user.last_name}`,
+      fullname: `${vehicle.user.name} ${vehicle.user.last_name}`,
       soat: vehicle.soat ?? null,
       created_at: vehicle.created_at,
     }));

@@ -8,7 +8,7 @@ import { getMonthRange } from '../../shared/utils/date.utils';
 import { Vehicle } from '../vehicles/entities/vehicle.entity';
 import { AccessLog } from './entities/access-log.entity';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, IsNull, In } from 'typeorm';
+import { Repository, IsNull, In, Between } from 'typeorm';
 import * as moment from 'moment';
 
 @Injectable()
@@ -81,36 +81,28 @@ export class AccessLogsService {
   }  
 
   async getVehicleEntriesByDay(month: number, year?: number) {
-    const { start, end } = getMonthRange(month, year);
-    const result = await this.accessLogRepository
-      .createQueryBuilder('log')
-      .select('DATE(log.entry_date)', 'date')
-      .addSelect('COUNT(DISTINCT log.vehicle_id)', 'total')
-      .where('log.entry_date BETWEEN :start AND :end', { start, end })
-      .groupBy('date')
-      .orderBy('date', 'ASC')
-      .getRawMany();
-
-    const today = moment();
-    const isCurrentMonth = today.month() + 1 === month && (!year || today.year() === year);
-    const daysToInclude = isCurrentMonth ? today.date() : moment(start).daysInMonth();      
-    const fullMonth = Array.from({ length: daysToInclude }, (_, i) => {
-      const date = moment(start).date(i + 1).format('MMM DD').toUpperCase();
-      const found = result.find(r => r.date === date);
-      return { date, total: found ? parseInt(found.total) : 0 };
-    });
-    
-    return fullMonth;
-  }
-
-  async countVehiclesByMonth(month: number, year?: number) {    
     const { start, end } = getMonthRange(month, year);    
     const result = await this.accessLogRepository
       .createQueryBuilder('log')
-      .select('COUNT(DISTINCT log.vehicle_id)', 'total')
-      .where('log.entry_date BETWEEN :start AND :end', { start, end })
-      .getRawOne();
-    return parseInt(result?.total) || 0;
+      .select('EXTRACT(DAY FROM log.entry_date)', 'day')
+      .addSelect('COUNT(*)', 'total')
+      .where('log.entry_date IS NOT NULL')
+      .andWhere('log.entry_date BETWEEN :start AND :end', { start, end })
+      .groupBy('day')
+      .orderBy('day', 'ASC')
+      .getRawMany();
+    return result.map((item) => ({
+      ...item,
+      total: parseInt(item.total),
+    }));
+  }
+
+  async countEntriesByMonth(month: number, year?: number) {    
+    const { start, end } = getMonthRange(month, year);
+    const result = await this.accessLogRepository.count({
+      where: { entry_date: Between(start, end) },
+    });
+    return result;
   }
 
   private async enrichAccessLogs(accessLogs: AccessLog[]) {
@@ -169,7 +161,7 @@ export class AccessLogsService {
     const newAccessLog = await this.accessLogRepository.save({
       vehicle_id,
       entry_date: timestamp.toDate(),
-      vehicle_type: vehicle?.type?.name || 'Unregistered',
+      vehicle_type: vehicle?.type?.name || 'unregistered',
     });
     this.notificationsService.notifyVehicleEntry(newAccessLog);
     return newAccessLog;
