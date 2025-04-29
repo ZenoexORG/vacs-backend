@@ -7,6 +7,7 @@ import { UpdateIncidentDto } from './dto/update-incident.dto';
 import { PaginationDto } from '../../shared/dtos/pagination.dto';
 import { getMonthRange } from '../../shared/utils/date.utils';
 import { PaginationService } from 'src/shared/services/pagination.service';
+import { NotificationsService } from '../notifications/notifications.service';
 
 @Injectable()
 export class IncidentsService {
@@ -14,10 +15,13 @@ export class IncidentsService {
     @InjectRepository(Incident)
     private readonly incidentRepository: Repository<Incident>,
     private readonly paginationService: PaginationService,
+    private readonly notificationsService: NotificationsService,
   ) {}
 
-  create(createIncidentDto: CreateIncidentDto) {
-    return this.incidentRepository.save(createIncidentDto);
+  async create(createIncidentDto: CreateIncidentDto) {
+    const newIncident = await this.incidentRepository.save(createIncidentDto);
+    this.notificationsService.notifyIncidentReported(newIncident);
+    return newIncident;
   }
 
   async findAll(paginationDto: PaginationDto) {
@@ -48,8 +52,11 @@ export class IncidentsService {
     const incident = await this.incidentRepository.findOne({ where: { id } });
     if (!incident) {
       throw new NotFoundException('Incident not found');
-    }    
-    return this.incidentRepository.update(id, updateIncidentDto);
+    }
+    await this.incidentRepository.update(id, updateIncidentDto);
+    const updatedIncident = await this.incidentRepository.findOne({ where: { id } });
+    this.notificationsService.notifyIncidentResolved(updatedIncident);
+    return updatedIncident;
   }
 
   async remove(id: number) {

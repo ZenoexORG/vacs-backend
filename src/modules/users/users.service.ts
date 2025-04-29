@@ -10,6 +10,7 @@ import { UpdateUserDto } from './dto/update-user.dto';
 import { PaginationDto } from '../../shared/dtos/pagination.dto';
 import { User } from './entities/user.entity';
 import { PaginationService } from 'src/shared/services/pagination.service';
+import { NotificationsService } from '../notifications/notifications.service';
 
 @Injectable()
 export class UsersService {
@@ -17,6 +18,7 @@ export class UsersService {
     @InjectRepository(User)
     private usersRepository: Repository<User>,
     private readonly paginationService: PaginationService,
+    private readonly notificationsService: NotificationsService,
   ) {}
 
   async create(createUserDto: CreateUserDto): Promise<User> {
@@ -26,7 +28,9 @@ export class UsersService {
     if (existingUser) {
       throw new BadRequestException('User already exists');
     }
-    return this.usersRepository.save(createUserDto);
+    const newUser = this.usersRepository.create(createUserDto);
+    this.notificationsService.notifyUserCreated(newUser);
+    return this.usersRepository.save(newUser);
   }
 
   async findAll(paginationDto: PaginationDto) {
@@ -56,18 +60,31 @@ export class UsersService {
   }
 
   async update(id: string, updateUserDto: UpdateUserDto) {
-    const user = await this.usersRepository.findOne({ where: { id } });
-    if (!user) {
-      throw new NotFoundException('User not found');
+    const existingUser = await this.usersRepository.findOne({
+      where: { id },
+    });
+    if (existingUser && existingUser.id !== id) {
+      throw new BadRequestException('User with this ID already exists');
     }
-    return this.usersRepository.update(id, updateUserDto);
+    await this.usersRepository.update(id, updateUserDto);
+    const updatedUser = await this.usersRepository.findOne({
+      where: { id },
+    });
+    if (!updatedUser) {
+      throw new NotFoundException(`User with ID "${id}" not found`);
+    }
+    this.notificationsService.notifyUserUpdated(updatedUser);
+    return updatedUser;
   }
 
   async remove(id: string) {
-    const user = await this.usersRepository.findOne({ where: { id } });
-    if (!user) {
-      throw new NotFoundException('User not found');
+    const existingUser = await this.usersRepository.findOne({
+      where: { id },
+    });
+    if (!existingUser || existingUser.id !== id) {
+      throw new NotFoundException('User not found');      
     }
-    return this.usersRepository.remove(user);
+    await this.usersRepository.delete(id);
+    this.notificationsService.notifyUserDeleted(existingUser);    
   }
 }

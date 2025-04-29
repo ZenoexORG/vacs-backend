@@ -12,6 +12,7 @@ import { User } from '../users/entities/user.entity';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { PaginationService } from 'src/shared/services/pagination.service';
+import { NotificationsService } from '../notifications/notifications.service';
 
 @Injectable()
 export class VehiclesService {
@@ -23,6 +24,7 @@ export class VehiclesService {
     @InjectRepository(VehicleType)
     private readonly vehicleTypeRepository: Repository<VehicleType>,
     private readonly paginationService: PaginationService,
+    private readonly notificationsService: NotificationsService,
   ) {}
 
   async create(createVehicleDto: CreateVehicleDto) {
@@ -43,8 +45,10 @@ export class VehiclesService {
     });
     if (!vehicleType) {
       throw new NotFoundException('Vehicle type not found');
-    }
-    return this.vehicleRepository.save(createVehicleDto);
+    }    
+    const newVehicle = await this.vehicleRepository.save(createVehicleDto);
+    this.notificationsService.notifyVehicleCreated(newVehicle);
+    return newVehicle;
   }
 
   async findAll(paginationDto: PaginationDto){
@@ -98,7 +102,13 @@ export class VehiclesService {
       throw new NotFoundException('Vehicle type not found');
       }
     }
-    return this.vehicleRepository.update(id, updateVehicleDto);
+    await this.vehicleRepository.update(id, updateVehicleDto);
+    const updatedVehicle = await this.vehicleRepository.findOne({
+      where: { id },
+      relations: ['type', 'user'],
+    });
+    this.notificationsService.notifyVehicleUpdated(updatedVehicle);
+    return updatedVehicle;    
   }
 
   async remove(id: string): Promise<Vehicle> {
@@ -106,6 +116,7 @@ export class VehiclesService {
     if (!vehicle) {
       throw new NotFoundException('Vehicle not found');
     }
+    this.notificationsService.notifyVehicleDeleted(vehicle);
     return this.vehicleRepository.remove(vehicle);
   }  
 

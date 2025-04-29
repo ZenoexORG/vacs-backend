@@ -1,5 +1,5 @@
 export enum AppPermissions {
-    EMPLOYEES_CREATE = 'EMPLOYEES_s:create',
+    EMPLOYEES_CREATE = 'employees:create',
     EMPLOYEES_VIEW = 'EMPLOYEES_s:view',
     EMPLOYEES_EDIT = 'EMPLOYEES_s:edit',
     EMPLOYEES_DELETE = 'EMPLOYEES_s:delete',

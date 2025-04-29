@@ -1,5 +1,6 @@
 import { Injectable, BadRequestException, NotFoundException } from '@nestjs/common';
 import { PaginationService } from 'src/shared/services/pagination.service';
+import { NotificationsService } from '../notifications/notifications.service';
 import { CreateAccessLogDto } from './dto/create-access-log.dto';
 import { UpdateAccessLogDto } from './dto/update-access-log.dto';
 import { PaginationDto } from '../../shared/dtos/pagination.dto';
@@ -18,6 +19,7 @@ export class AccessLogsService {
     @InjectRepository(Vehicle)
     private vehicleRepository: Repository<Vehicle>,    
     private readonly paginationService: PaginationService,
+    private readonly notificationsService: NotificationsService,
   ) {}
 
   async create(createAccessLogDto: CreateAccessLogDto) {
@@ -29,11 +31,11 @@ export class AccessLogsService {
     const newTimestamp = this.validateTimestamp(timestamp);
     const vehicle = await this.vehicleRepository.findOne({ where: { id: vehicle_id }, relations: {type: true} });
     if (access_type === 'entry'){
-      return this.handleEntryAccess(vehicle_id, newTimestamp, vehicle ?? undefined);
+      return this.handleEntryAccess(vehicle_id, newTimestamp, vehicle ?? undefined);      
     } else if (access_type === 'exit') {
       return this.handleExitAccess(vehicle_id, newTimestamp);
     }
-    throw new BadRequestException('Invalid access type. Expected "entry" or "exit"');
+    throw new BadRequestException('Invalid access type. Expected "entry" or "exit"');    
   }
 
   async findAll(paginationDto: PaginationDto) {
@@ -164,11 +166,13 @@ export class AccessLogsService {
     if (latestAccessLog) {
       throw new BadRequestException('Vehicle already has an entry without exit');
     }
-    return this.accessLogRepository.save({
+    const newAccessLog = await this.accessLogRepository.save({
       vehicle_id,
       entry_date: timestamp.toDate(),
       vehicle_type: vehicle?.type?.name || 'Unregistered',
     });
+    this.notificationsService.notifyVehicleEntry(newAccessLog);
+    return newAccessLog;
   }
 
   private async handleExitAccess(vehicle_id: string, timestamp: moment.Moment) {
@@ -183,8 +187,13 @@ export class AccessLogsService {
     if (timestamp.isBefore(entryDate)) {
       throw new BadRequestException('Exit date cannot be before entry date');
     }
-    return this.accessLogRepository.update(latestAccessLog.id, {
+    await this.accessLogRepository.update(latestAccessLog.id, {
       exit_date: timestamp.toDate(),
     });
+    const updatedAccessLog = await this.accessLogRepository.findOne({
+      where: { id: latestAccessLog.id },
+    });
+    this.notificationsService.notifyVehicleExit(updatedAccessLog);
+    return updatedAccessLog;    
   }
 }

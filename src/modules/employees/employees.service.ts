@@ -2,6 +2,8 @@ import {
   Injectable,
   BadRequestException,
   NotFoundException,
+  Inject,
+  forwardRef,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, Not } from 'typeorm';
@@ -11,6 +13,7 @@ import { PaginationDto } from '../../shared/dtos/pagination.dto';
 import { Employee } from './entities/employee.entity';
 import { Permission } from '../permissions/entities/permission.entity';
 import { PaginationService } from 'src/shared/services/pagination.service';
+import { NotificationsService } from '../notifications/notifications.service';
 
 @Injectable()
 export class EmployeesService {
@@ -18,6 +21,8 @@ export class EmployeesService {
     @InjectRepository(Employee)
     private employeesRepository: Repository<Employee>,
     private readonly paginationService: PaginationService,
+    @Inject(forwardRef(() => NotificationsService))
+    private readonly notificationsService: NotificationsService,
   ) {}
 
   async create(createEmployeeDto: CreateEmployeeDto): Promise<Employee> {
@@ -35,6 +40,7 @@ export class EmployeesService {
       );
     }
     const newEmployee = this.employeesRepository.create(createEmployeeDto);
+    this.notificationsService.notifyEmployeeCreated(newEmployee);
     return this.employeesRepository.save(newEmployee);
   }
 
@@ -85,6 +91,7 @@ export class EmployeesService {
       ...existingEmployee,
       ...updateEmployeeDto,
     });
+    this.notificationsService.notifyEmployeeUpdated(updatedEmployee);    
     return this.employeesRepository.save(updatedEmployee);
   }
 
@@ -93,6 +100,7 @@ export class EmployeesService {
     if (!employee) {
       throw new NotFoundException('Employee not found');
     }
+    this.notificationsService.notifyEmployeeDeleted(employee);
     return this.employeesRepository.delete(id);
   }
 

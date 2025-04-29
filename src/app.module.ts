@@ -15,6 +15,7 @@ import { AuthModule } from './modules/auth/auth.module';
 import { DashboardModule } from './modules/dashboard/dashboard.module';
 import { ReportModule } from './modules/daily_reports/daily_reports.module';
 import { ScheduleModule } from '@nestjs/schedule';
+import { NotificationsModule } from './modules/notifications/notifications.module';
 
 @Module({
   imports: [
@@ -31,7 +32,8 @@ import { ScheduleModule } from '@nestjs/schedule';
     IncidentsModule,
     AccessLogsModule,
     DashboardModule,
-    ReportModule,    
+    ReportModule,
+    NotificationsModule,
   ],
   controllers: [AppController],
   providers: [AppService],
