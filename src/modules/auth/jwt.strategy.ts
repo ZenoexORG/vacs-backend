@@ -3,6 +3,7 @@ import { PassportStrategy } from '@nestjs/passport';
 import { ExtractJwt, Strategy } from 'passport-jwt';
 import { Request } from 'express';
 import { EmployeesService } from '../employees/employees.service';
+import { Role } from '../roles/entities/role.entity';
 
 @Injectable()
 export class JwtStrategy extends PassportStrategy(Strategy) {
@@ -26,10 +27,13 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
     if (!user) {
       throw new UnauthorizedException('User not found');
     }
+    const permissions = user.role?.permissions?.map((permission) => permission.name) || [];
+
     return {
       id: payload.sub,
       username: payload.username,
-      permissions: payload.permissions,
+      role: user.role,
+      permissions: permissions,
     };
   }
 }

@@ -30,7 +30,7 @@ export function formatReportDate(date: Date | string): string {
   return d.format('DD [de] MMMM [de] YYYY');
 }
 
-export function formatDate(date: Date | string): string {
+export function formatDate(date: Date | string, format: string = 'YYYY-MM-DD'): string {
   const d = moment.tz(date, 'America/Bogota');
-  return d.format('YYYY-MM-DD');
+  return d.format(format);
 }

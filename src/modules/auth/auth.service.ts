@@ -1,7 +1,7 @@
 import { Injectable, UnauthorizedException } from '@nestjs/common';
-import { JwtService } from '@nestjs/jwt';
 import { EmployeesService } from '../employees/employees.service';
 import { Employee } from '../employees/entities/employee.entity';
+import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcrypt';
 
 @Injectable()
@@ -23,11 +23,21 @@ export class AuthService {
   async login(user: Employee) {     
     const payload = {
       sub: user.id,
-      username: user.username,
-      permissions: user.role?.permissions?.map((p) => p.name) || [],
+      fullname: `${user.name} ${user.last_name}`,
+      role: user.role?.name,
     };
+    const viewPermissions = user.role?.permissions
+    ?.filter((permission) => permission.name.endsWith('view'))
+    .map((permission) => permission.name) || [];
+
+    const permissionsPayload = {
+      viewPermissions: viewPermissions,
+    }
+
     return {
+      message: 'Login successful',
       token: this.jwtService.sign(payload),
+      viewPermissions: this.jwtService.sign(permissionsPayload),
     };
   }
 }

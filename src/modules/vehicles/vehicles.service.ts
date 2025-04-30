@@ -1,9 +1,7 @@
-import {
-  Injectable,
-  NotFoundException,
-  BadRequestException,
-} from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
+import { NotificationsService } from '../notifications/notifications.service';
 import { VehicleType } from '../vehicle_types/entities/vehicle-type.entity';
+import { PaginationService } from 'src/shared/services/pagination.service';
 import { PaginationDto } from '../../shared/dtos/pagination.dto';
 import { CreateVehicleDto } from './dto/create-vehicle.dto';
 import { UpdateVehicleDto } from './dto/update-vehicle.dto';
@@ -11,8 +9,6 @@ import { Vehicle } from './entities/vehicle.entity';
 import { User } from '../users/entities/user.entity';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { PaginationService } from 'src/shared/services/pagination.service';
-import { NotificationsService } from '../notifications/notifications.service';
 
 @Injectable()
 export class VehiclesService {
@@ -28,24 +24,17 @@ export class VehiclesService {
   ) {}
 
   async create(createVehicleDto: CreateVehicleDto) {
-    const existingVehicle = await this.vehicleRepository.findOne({
-      where: { id: createVehicleDto.id },
-    });
-    if (existingVehicle) {
-      throw new BadRequestException('Vehicle already exists');
-    }
-    const user = await this.userRepository.findOne({
-      where: { id: createVehicleDto.owner_id },
-    });
-    if (!user) {
-      throw new NotFoundException('User not found');
-    }
-    const vehicleType = await this.vehicleTypeRepository.findOne({
-      where: { id: createVehicleDto.type_id },
-    });
-    if (!vehicleType) {
-      throw new NotFoundException('Vehicle type not found');
-    }    
+    const { id, owner_id, type_id } = createVehicleDto;
+
+    const [vehicleExists, userExists, vehicleTypeExists] = await Promise.all([
+      this.vehicleRepository.count({ where: { id: id } }),
+      this.userRepository.count({ where: { id: owner_id } }),
+      this.vehicleTypeRepository.count({ where: { id: type_id } }),
+    ]);
+
+    if (vehicleExists > 0) throw new BadRequestException('Vehicle with this license plate already exists');
+    if (userExists === 0) throw new NotFoundException('User with this identifier does not exist');
+    if (vehicleTypeExists === 0) throw new NotFoundException('Vehicle type does not exist');
     const newVehicle = await this.vehicleRepository.save(createVehicleDto);
     this.notificationsService.notifyVehicleCreated(newVehicle);
     return newVehicle;
@@ -59,7 +48,7 @@ export class VehiclesService {
       limit || Number.MAX_SAFE_INTEGER,
       {
         relations: { type: true, user: true },
-        order: { id: 'ASC' },
+        order: { created_at: 'DESC' },
       },
     )    
     return {
@@ -126,7 +115,7 @@ export class VehiclesService {
       type_id: vehicle.type.id,
       type: vehicle.type.name,
       owner_id: vehicle.user.id,
-      fullname: `${vehicle.user.name} ${vehicle.user.last_name}`,
+      owner_fullname: `${vehicle.user.name} ${vehicle.user.last_name}`,
       soat: vehicle.soat ?? null,
       created_at: vehicle.created_at,
     }));

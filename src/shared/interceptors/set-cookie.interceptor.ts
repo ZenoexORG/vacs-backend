@@ -1,4 +1,5 @@
 import {Injectable, NestInterceptor, ExecutionContext, CallHandler } from '@nestjs/common';
+import { path } from 'pdfkit';
 import { Observable } from 'rxjs';
 import { map } from 'rxjs/operators';
 
@@ -8,15 +9,30 @@ export class SetCookieInterceptor implements NestInterceptor {
     return next.handle().pipe(
       map((data) => {
         const response = context.switchToHttp().getResponse();
+        const dataToRemove = {}
+        const cookieOptions = {
+          httpOnly: true,
+          secure: process.env.NODE_ENV === 'production',
+          sameSite: 'strict',          
+          path : '/',
+        }
+
         if (data && data.token){
           response.cookie('token', data.token, {
-            httpOnly: true,
-            secure: process.env.NODE_ENV === 'production',
-            sameSite: 'strict',
-            maxAge: 12 * 60 * 60 * 1000, // 12 hours
-            path: '/',            
+            ...cookieOptions,
+            maxAge: 1000 * 60 * 60 * 12, // 12 hours
+          });          
+          dataToRemove['token'] = true;
+        }
+        if (data && data.viewPermissions) {
+          response.cookie('viewPermissions', data.viewPermissions, {
+            ...cookieOptions,
+            maxAge: 1000 * 60 * 60 * 12, // 12 hours
           });
-          const { token, ...rest } = data;
+          dataToRemove['viewPermissions'] = true;
+        }
+        if (Object.keys(dataToRemove).length > 0) {
+          const { token, viewPermissions, ...rest } = data;
           return rest;
         }
         return data;

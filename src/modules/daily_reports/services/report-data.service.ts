@@ -78,8 +78,7 @@ export class ReportDataService {
   
   async getConsolidatedRangeData(dateRange: DateRangeDto): Promise<DailyReportData> {
     try {
-      const { startDate, endDate } = dateRange;
-      // Ajustamos endDate para incluir todo el día
+      const { startDate, endDate } = dateRange;      
       const adjustedEndDate = new Date(endDate);
       adjustedEndDate.setHours(23, 59, 59, 999);
 
@@ -140,8 +139,7 @@ export class ReportDataService {
           date: new Date(currentDate),
           data
         });
-        
-        // Avanzar al siguiente día
+                
         currentDate.setDate(currentDate.getDate() + 1);
       }
 
@@ -153,8 +151,7 @@ export class ReportDataService {
   }
 
   async getWeekdayTrends(months: number = 3): Promise<Record<string, any>> {
-    try {
-      // Calcular fecha de inicio (hace N meses)
+    try {      
       const startDate = new Date();
       startDate.setMonth(startDate.getMonth() - months);
       startDate.setHours(0, 0, 0, 0);
@@ -171,8 +168,7 @@ export class ReportDataService {
         .groupBy('weekday')
         .orderBy('weekday')
         .getRawMany();
-        
-      // Convertir a formato más amigable
+              
       const weekdayNames = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
       
       const formattedData = weekdayData.map(day => ({
@@ -414,8 +410,7 @@ export class ReportDataService {
         this.getEntriesByHour(range),
         this.getExitsByHour(range)
       ]);
-
-      // Encontrar la hora con más entradas
+      
       let maxEntries = 0;
       let peakEntryHour = 0;
       Object.entries(entriesByHour).forEach(([hour, count]) => {
@@ -424,8 +419,7 @@ export class ReportDataService {
           peakEntryHour = parseInt(hour);
         }
       });
-
-      // Encontrar la hora con más salidas
+      
       let maxExits = 0;
       let peakExitHour = 0;
       Object.entries(exitsByHour).forEach(([hour, count]) => {

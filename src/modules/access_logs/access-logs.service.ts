@@ -4,12 +4,13 @@ import { NotificationsService } from '../notifications/notifications.service';
 import { CreateAccessLogDto } from './dto/create-access-log.dto';
 import { UpdateAccessLogDto } from './dto/update-access-log.dto';
 import { PaginationDto } from '../../shared/dtos/pagination.dto';
-import { getMonthRange } from '../../shared/utils/date.utils';
+import { getMonthRange, formatDate } from '../../shared/utils/date.utils';
 import { Vehicle } from '../vehicles/entities/vehicle.entity';
 import { AccessLog } from './entities/access-log.entity';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, IsNull, In, Between } from 'typeorm';
 import * as moment from 'moment';
+import { parse } from 'path';
 
 @Injectable()
 export class AccessLogsService {
@@ -46,7 +47,7 @@ export class AccessLogsService {
       page || 1,
       limit || Number.MAX_SAFE_INTEGER,
       {
-        order: { id: 'ASC' },
+        order: { id: 'DESC' },
       },
     );   
     const enrichedLogs = await this.enrichAccessLogs(result.data);
@@ -81,29 +82,33 @@ export class AccessLogsService {
   }  
 
   async getVehicleEntriesByDay(month: number, year?: number) {
-    const { start, end } = getMonthRange(month, year);    
+    const { start, end } = getMonthRange(month, year);
 
     const currentYear = year || moment().year();
-    const daysInMonth = moment(`${currentYear}-${month}`, 'YYYY-MM').daysInMonth();    
+    const daysInMonth = moment(`${currentYear}-${month}`, 'YYYY-MM').daysInMonth();
 
     const result = await this.accessLogRepository
       .createQueryBuilder('log')
-      .select('EXTRACT(DAY FROM log.entry_date)', 'day')
+      .select('log.entry_date', 'entry_date')
       .addSelect('COUNT(*)', 'total')
       .where('log.entry_date IS NOT NULL')
       .andWhere('log.entry_date BETWEEN :start AND :end', { start, end })
-      .groupBy('day')
-      .orderBy('day', 'ASC')
-      .getRawMany();    
+      .groupBy('log.entry_date')
+      .orderBy('log.entry_date', 'ASC')
+      .getRawMany();
     
-    return Array.from({ length: daysInMonth}, (_, i) => {
-      const day = i + 1;
-      const entry = result.find((entry) => entry.day === day);
-      return {
-        day: day.toString(),
-        total: entry ? parseInt(entry.total, 10) : null,
-      };
+    const daysMap = new Map();
+    for (let i = 1; i <= daysInMonth; i++) {
+      const day = i.toString().padStart(2, '0');
+      daysMap.set(day, null)
+    }
+
+    result.forEach((entry) => {
+      const day = formatDate(entry.entry_date, 'DD');
+      daysMap.set(day, parseInt(entry.total));
     })
+
+    return Array.from(daysMap).map(([day, total]) => ({day, total}))
   }
 
   async countEntriesByMonth(month: number, year?: number) {    
@@ -132,9 +137,9 @@ export class AccessLogsService {
     );
   }
 
-  private validateColombianLicensePlate(plateNumber: string): boolean {    
+  private validateColombianLicensePlate(plateNumber: string): boolean {
     const carPlateRegex = /^[A-Z]{3}\d{3}$/;
-    const motorcyclePlateRegex = /^[A-Z]{2}-\d{3}$/;
+    const motorcyclePlateRegex = /^(?:[A-Z]{3}\d{2}[A-Z]|[A-Z]{2}\d{2}[A-Z])$/;
     const diplomaticPlateRegex = /^(CD|CC|OI)\d{4}$/;
     return carPlateRegex.test(plateNumber) ||
            motorcyclePlateRegex.test(plateNumber) ||
