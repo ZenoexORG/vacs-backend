@@ -82,6 +82,10 @@ export class AccessLogsService {
 
   async getVehicleEntriesByDay(month: number, year?: number) {
     const { start, end } = getMonthRange(month, year);    
+
+    const currentYear = year || moment().year();
+    const daysInMonth = moment(`${currentYear}-${month}`, 'YYYY-MM').daysInMonth();    
+
     const result = await this.accessLogRepository
       .createQueryBuilder('log')
       .select('EXTRACT(DAY FROM log.entry_date)', 'day')
@@ -90,11 +94,16 @@ export class AccessLogsService {
       .andWhere('log.entry_date BETWEEN :start AND :end', { start, end })
       .groupBy('day')
       .orderBy('day', 'ASC')
-      .getRawMany();
-    return result.map((item) => ({
-      ...item,
-      total: parseInt(item.total),
-    }));
+      .getRawMany();    
+    
+    return Array.from({ length: daysInMonth}, (_, i) => {
+      const day = i + 1;
+      const entry = result.find((entry) => entry.day === day);
+      return {
+        day,
+        total: entry ? parseInt(entry.total, 10) : null,
+      };
+    })
   }
 
   async countEntriesByMonth(month: number, year?: number) {    

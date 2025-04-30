@@ -1,75 +1,153 @@
-<p align="center">
-  <a href="http://nestjs.com/" target="blank"><img src="https://nestjs.com/img/logo-small.svg" width="120" alt="Nest Logo" /></a>
-</p>
+# 🚗 Vehicle Access Control System (VACS) Backend
 
-# Vehicle Access Control System (VACS) Backend
+Backend service built with NestJS for VACS - a system designed to manage and control vehicle access in secured areas at UTB.
 
-Backend service built with NestJS for VACS - a system designed to manage and control vehicle access in secured areas.
+## ✅ Prerequisites
 
-## Description
+- Node.js (v16 or higher)
+- npm or yarn
+- PostgreSQL (latest stable version)
+- Git
 
-This service provides REST API endpoints to manage vehicle access records, schedules, and related security data.
+## 🔧 Installation
 
-## Documentation
-
-Detailed documentation can be found in the [docs](./docs) directory.
-
-## Installation
-
+1. Clone the repository
 ```bash
-$ npm install
+git clone https://github.com/your-username/vacs-backend.git
+cd vacs-backend
 ```
 
-## Running the app
-
+2. Install dependencies
 ```bash
-# development
-$ npm run start
-
-# watch mode
-$ npm run start:dev
-
-# production mode
-$ npm run start:prod
+npm install
+# or
+yarn install
 ```
 
-## Test
-
-```bash
-# unit tests
-$ npm run test
-
-# e2e tests
-$ npm run test:e2e
-
-# test coverage
-$ npm run test:cov
-```
-
-## API Documentation
-
-Once the application is running, you can access the Swagger API documentation at:
+3. Set up environment variables:
+   - Create an `.env` file in the project root based on the `.env.example` file
 
 ```
-http://{host}:3000/docs
-```
-
-Replace `{host}` with your server's hostname or IP address.
-
-## Environment Variables
-
-Make sure to set up the following environment variables:
-
-```
-DB_HOST=
-DB_PORT=
-DB_USERNAME=
-DB_PASSWORD=
-DB_NAME=
-DB_SSL=true
+# Server Configuration
 PORT=3000
+
+# Database Configuration
+DB_HOST=your_db_host.postgres.database.azure.com
+DB_PORT=5432
+DB_NAME=your_database_name
+DB_USERNAME=your_username
+DB_PASSWORD=your_strong_password
+DB_SSL=true
+
+# Authentication
+JWT_SECRET=your_strong_jwt_secret
+JWT_EXPIRATION=1h
+COOKIE_SECRET=your_strong_cookie_secret
+
+# API Keys
+DEVICE_API_KEY=your_strong_random_generated_api_key
 ```
 
-## License
+4. Run database migrations
+```bash
+npm run migration:run
+# or
+yarn migration:run
+```
 
-This project is [MIT licensed](LICENSE).
+## 🚀 Running the Application
+
+### Development
+
+To run the application in development mode:
+
+```bash
+npm run start:dev
+# or
+yarn start:dev
+```
+
+### Production
+
+To build and run in production mode:
+
+```bash
+npm run build
+npm run start:prod
+# or
+yarn build
+yarn start:prod
+```
+
+## 📚 API Documentation
+
+Once the server is running, you can access the API documentation at:
+
+```
+http://localhost:{{PORT}}/docs
+```
+
+## 📂 Project Structure
+
+```
+src/
+├── app.controller.ts
+├── app.module.ts
+├── app.service.ts
+├── main.ts
+├── config/           # Application configuration
+├── database/         # Database configuration
+├── modules/          # Application modules
+│   ├── access_logs/  # Access logs management
+│   ├── auth/         # Authentication
+│   ├── vehicles/     # Vehicle management
+│   └── ...
+└── shared/           # Shared resources
+    ├── decorators/
+    ├── dtos/
+    ├── enums/
+    ├── guards/
+    ├── interceptors/
+    ├── interfaces/
+    ├── services/
+    └── utils/
+```
+
+## 🧪 Tests
+
+To run unit tests:
+
+```bash
+npm run test
+# or
+yarn test
+```
+
+To run end-to-end tests:
+
+```bash
+npm run test:e2e
+# or
+yarn test:e2e
+```
+
+## ✨ Key Features
+
+- 🚙 Vehicle entry and exit record management
+- 🔐 Role and permission-based authentication and authorization 
+- 📊 Daily and date-range report generation
+- ⚠️ Incident management
+- 📝 API documentation with Swagger
+
+## 🛠️ Technologies
+
+- 🏗️ NestJS - A progressive Node.js framework
+- 🗃️ TypeORM - ORM for TypeScript and JavaScript
+- 🐘 PostgreSQL - Advanced open source database
+- 🔑 JWT - For secure authentication
+- 📋 Swagger - For comprehensive API documentation
+
+
+## 📄 License
+
+This project is licensed under the MIT License - see the LICENSE file for details.
