@@ -13,7 +13,7 @@ Backend service built with NestJS for VACS - a system designed to manage and con
 
 1. Clone the repository
 ```bash
-git clone https://github.com/your-username/vacs-backend.git
+git clone https://github.com/ZenoexORG/vacs-backend.git
 cd vacs-backend
 ```
 
@@ -146,7 +146,6 @@ yarn test:e2e
 - 🐘 PostgreSQL - Advanced open source database
 - 🔑 JWT - For secure authentication
 - 📋 Swagger - For comprehensive API documentation
-
 
 ## 📄 License
 

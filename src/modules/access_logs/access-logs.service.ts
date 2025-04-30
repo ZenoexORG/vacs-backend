@@ -100,7 +100,7 @@ export class AccessLogsService {
       const day = i + 1;
       const entry = result.find((entry) => entry.day === day);
       return {
-        day,
+        day: day.toString(),
         total: entry ? parseInt(entry.total, 10) : null,
       };
     })
