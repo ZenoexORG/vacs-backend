@@ -1,41 +1,83 @@
-import { Module } from '@nestjs/common';
+import { Module, ValidationPipe } from '@nestjs/common';
+import { ConfigModule } from '@nestjs/config';
+import { ScheduleModule } from '@nestjs/schedule';
+import { CacheModule } from '@nestjs/cache-manager';
+import { APP_INTERCEPTOR, APP_FILTER, APP_PIPE } from '@nestjs/core';
+
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
-import { UsersModule } from './modules/users/users.module';
 import { DatabaseModule } from './database/database.module';
-import { EmployeesModule } from './modules/employees/employees.module';
-import { RolesModule } from './modules/roles/roles.module';
-import { PermissionsModule } from './modules/permissions/permissions.module';
-import { ConfigModule } from '@nestjs/config';
-import { VehiclesModule } from './modules/vehicles/vehicles.module';
-import { VehicleTypesModule } from './modules/vehicle_types/vehicle-types.module';
-import { IncidentsModule } from './modules/incidents/incidents.module';
-import { AccessLogsModule } from './modules/access_logs/access-logs.module';
-import { AuthModule } from './modules/auth/auth.module';
-import { DashboardModule } from './modules/dashboard/dashboard.module';
-import { ReportModule } from './modules/daily_reports/daily_reports.module';
-import { ScheduleModule } from '@nestjs/schedule';
-import { NotificationsModule } from './modules/notifications/notifications.module';
+import { SharedModule } from './shared/shared.module';
+import { ValidationFilter } from './filters/validation.filter';
+import { DateRequestInterceptor } from './shared/interceptors/date-request.interceptor';
+import { DateConversionInterceptor } from './shared/interceptors/date-conversion.interceptor';
+
+import {
+  UsersModule,
+  EmployeesModule,
+  RolesModule,
+  PermissionsModule,
+  VehiclesModule,
+  VehicleTypesModule,
+  IncidentsModule,
+  IncidentMessagesModule,
+  AccessLogsModule,
+  AuthModule,
+  DashboardModule,
+  ReportModule,
+  NotificationsModule,
+} from './modules';
 
 @Module({
   imports: [
     ConfigModule.forRoot({ isGlobal: true }),
     ScheduleModule.forRoot(),
+    CacheModule.register({
+      isGlobal: true,
+      ttl: 60 * 5,
+      max: 200,
+    }),
     DatabaseModule,
+    SharedModule,
+    // Feature modules
     AuthModule,
-    EmployeesModule,
     UsersModule,
+    EmployeesModule,
     RolesModule,
     PermissionsModule,
     VehiclesModule,
     VehicleTypesModule,
     IncidentsModule,
+    IncidentMessagesModule,
     AccessLogsModule,
     DashboardModule,
     ReportModule,
     NotificationsModule,
   ],
   controllers: [AppController],
-  providers: [AppService],
+  providers: [
+    AppService,
+    {
+      provide: APP_INTERCEPTOR,
+      useClass: DateRequestInterceptor
+    },
+    {
+      provide: APP_INTERCEPTOR,
+      useClass: DateConversionInterceptor
+    },
+    {
+      provide: APP_PIPE,
+      useValue: new ValidationPipe({
+        transform: true,
+        whitelist: true,
+        forbidNonWhitelisted: true,
+        validationError: { target: false },
+      }),
+    },
+    {
+      provide: APP_FILTER,
+      useClass: ValidationFilter,
+    },
+  ],
 })
 export class AppModule {}

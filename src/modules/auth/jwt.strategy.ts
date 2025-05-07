@@ -1,39 +1,45 @@
-import { Injectable, UnauthorizedException } from '@nestjs/common';
+import { RolePermissionsService } from 'src/shared/services/role-permissions.service';
+import { Injectable, Inject } from '@nestjs/common';
 import { PassportStrategy } from '@nestjs/passport';
 import { ExtractJwt, Strategy } from 'passport-jwt';
+import { CACHE_MANAGER } from '@nestjs/cache-manager';
+import { Cache } from 'cache-manager';
 import { Request } from 'express';
-import { EmployeesService } from '../employees/employees.service';
-import { Role } from '../roles/entities/role.entity';
 
 @Injectable()
 export class JwtStrategy extends PassportStrategy(Strategy) {
   constructor(
-    private readonly employeesService: EmployeesService,
+    @Inject(CACHE_MANAGER) private cacheManager: Cache,
+    private readonly rolePermissionsService: RolePermissionsService,
   ) {
     super({
-      jwtFromRequest: ExtractJwt.fromExtractors([        
+      jwtFromRequest: ExtractJwt.fromExtractors([
         (request: Request) => {
           return request?.cookies?.token;
         },
         ExtractJwt.fromAuthHeaderAsBearerToken(),
-      ]), 
+      ]),
       ignoreExpiration: false,
       secretOrKey: process.env.JWT_SECRET || 'super_safe_secret',
     });
   }
 
   async validate(payload: any) {
-    const user = await this.employeesService.findOne(payload.sub);
-    if (!user) {
-      throw new UnauthorizedException('User not found');
+    const cacheKey = `auth:${payload.sub}`;
+    const cachedUser = await this.cacheManager.get(cacheKey);
+    if (cachedUser) {
+      return cachedUser;
     }
-    const permissions = user.role?.permissions?.map((permission) => permission.name) || [];
+    const permissions = await this.rolePermissionsService.getPermissionsForRole(payload.role);
 
-    return {
+    const user = {
       id: payload.sub,
-      username: payload.username,
-      role: user.role,
-      permissions: permissions,
+      fullname: payload.fullname,
+      role: payload.role,
+      permissions,
     };
+
+    await this.cacheManager.set(cacheKey, user, 3600);
+    return user;
   }
 }

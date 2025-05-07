@@ -1,10 +1,15 @@
-import { IsString, IsInt, IsOptional, IsNotEmpty, MinLength, IsEnum, Matches, MaxLength } from 'class-validator';
+import {
+  IsString, IsInt, IsOptional, IsNotEmpty, Length,
+  IsEnum, Matches, IsPositive
+} from 'class-validator';
 import { KindIdentification, Gender } from 'src/shared/enums';
 import { ApiProperty } from '@nestjs/swagger';
 
 export class CreateEmployeeDto {
-  @ApiProperty({ description: 'Employee id', example: '123456789' })
-  @IsInt({ message: 'Id must be a string' })
+  @ApiProperty({ description: 'Employee ID (National ID)', example: '1234567890' })
+  @IsString({ message: 'Id must be a string' })
+  @Length(4, 10, { message: 'Id must be between 8 and 10 digits' })
+  @Matches(/^[0-9]{8,10}$/, { message: 'Id must be in the format of 8 to 10 digits' })
   @IsNotEmpty({ message: 'Id is required' })
   id: string;
 
@@ -14,39 +19,41 @@ export class CreateEmployeeDto {
   kind_id: KindIdentification;
 
   @ApiProperty({ description: 'Employee first name', example: 'Juan' })
-  @IsNotEmpty({ message: 'First name is required' })
+  @Matches(/^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$/, { message: 'First name can only contain letters and spaces' })
+  @Length(2, 50, { message: 'First name must be between 3 and 50 characters long' })
   @IsString({ message: 'First name must be a string' })
-  @Matches(/^[a-zA-Z]+$/, { message: 'First name can only contain letters' })
+  @IsNotEmpty({ message: 'First name is required' })
   name: string;
 
   @ApiProperty({ description: 'Employee last name', example: 'Perez' })
-  @IsNotEmpty({ message: 'Last name is required' })
+  @Matches(/^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$/, { message: 'Last name can only contain letters and spaces' })
+  @Length(2, 50, { message: 'Last name must be between 3 and 50 characters long' })
   @IsString({ message: 'Last name must be a string' })
-  @Matches(/^[a-zA-Z]+$/, { message: 'Last name can only contain letters' })
+  @IsNotEmpty({ message: 'Last name is required' })
   last_name: string;
 
   @ApiProperty({ description: 'Employee gender', example: 'M' })
-  @IsNotEmpty({ message: 'Gender is required' })
-  @IsEnum(Gender, { message: 'Invalid gender' })  
+  @IsEnum(Gender, { message: 'Invalid gender' })
+  @IsNotEmpty({ message: 'gender is required' })
   gender: Gender;
 
   @ApiProperty({ description: 'Employee role id', example: 1 })
+  @IsPositive({ message: 'Role id must be a positive integer' })
+  @IsInt({ message: 'Role id must be an integer' })
   @IsOptional()
-  @IsInt({ message: 'Role id must be a number' })
   role_id?: number;
 
-  @ApiProperty({ description: 'Employee username', example: 'juanperez' })
-  @IsNotEmpty({ message: 'Username is required' })
+  @ApiProperty({ description: 'Unique usernam', example: 'jdoe' })
   @IsString({ message: 'Username must be a string' })
   @Matches(/^[a-zA-Z0-9_\.]+$/, { message: 'Username can only contain letters, numbers, dots, and underscores' })
-  @MinLength(3, { message: 'Username must be at least 3 characters long' })
-  @MaxLength(20, { message: 'Username must be at most 20 characters long' })  
+  @Length(3, 20, { message: 'Username must be between 3 and 20 characters long' })
+  @IsNotEmpty({ message: 'Username is required' })
   username: string;
 
   @ApiProperty({ description: 'Employee password', example: 'password' })
-  @IsString({ message: 'Password must be a string' })  
+  @Matches(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/, { message: 'Password must contain at least one uppercase letter, one lowercase letter, one number, and one special character' })
+  @Length(8, 255, { message: 'Password must be at least 8 characters long' })
+  @IsString({ message: 'Password must be a string' })
   @IsNotEmpty({ message: 'Password is required' })
-  @Matches(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/, { message: 'Password must contain at least one uppercase letter, one lowercase letter, one number, and one special character'})
-  @MinLength(8, { message: 'Password must be at least 8 characters long' })  
   password: string;
 }

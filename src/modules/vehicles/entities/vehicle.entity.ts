@@ -1,11 +1,4 @@
-import {
-  Entity,
-  Column,
-  PrimaryColumn,
-  JoinColumn,  
-  OneToOne,
-  ManyToOne,
-} from 'typeorm';
+import { Entity, Column, PrimaryColumn, JoinColumn, OneToOne, ManyToOne } from 'typeorm';
 import { User } from '../../users/entities/user.entity';
 import { VehicleType } from 'src/modules/vehicle_types/entities/vehicle-type.entity';
 
@@ -17,8 +10,8 @@ export class Vehicle {
   @Column()
   type_id: number;
 
-  @Column({ nullable: true })
-  owner_id?: string;
+  @Column()
+  owner_id: string;
 
   @Column({ nullable: true })
   soat?: string;

@@ -1,22 +1,16 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { NotificationsGateway } from './notifications.gateway';
-import {
-  AccessLogEventType, 
-  VehicleEventType, 
-  IncidentEventType, 
-  EmployeeEventType,
-  UserEventType
-} from './interfaces/notification.interface';
+import { AccessLogEventType, VehicleEventType, IncidentEventType, EmployeeEventType, UserEventType } from './interfaces/notification.interface';
 import { NotificationEvents } from './constants/events.constants';
 
 @Injectable()
 export class NotificationsService {
   private readonly logger = new Logger('NotificationsService');
 
-  constructor(private notificationsGateway: NotificationsGateway) {}
-  
+  constructor(private notificationsGateway: NotificationsGateway) { }
+
   sendToEmployee<T>(employeeId: string | number, event: string, data: T): void {
-    this.logger.debug(`Sending ${event} to employee ${employeeId}`);    
+    this.logger.debug(`Sending ${event} to employee ${employeeId}`);
     this.notificationsGateway.server.to(`employee_${employeeId}`).emit(event, {
       event,
       data,
@@ -41,7 +35,7 @@ export class NotificationsService {
       timestamp: new Date()
     });
   }
-  
+
   sendToAll<T>(event: string, data: T): void {
     this.logger.debug(`Broadcasting ${event} to all connected clients`);
     this.notificationsGateway.server.emit(event, {
@@ -50,11 +44,11 @@ export class NotificationsService {
       timestamp: new Date()
     });
   }
-  
+
   notifyAccessLog(type: AccessLogEventType, data: any): void {
     this.sendToAll(`${NotificationEvents.ACCESS_LOGS}:${type}`, data);
   }
-  
+
   notifyVehicleEvent(type: VehicleEventType, data: any): void {
     this.sendToAll(`${NotificationEvents.VEHICLES}:${type}`, data);
   }
@@ -65,7 +59,7 @@ export class NotificationsService {
 
   notifyEmployeeEvent(type: EmployeeEventType, data: any): void {
     this.sendToAll(`${NotificationEvents.EMPLOYEES}:${type}`, data);
-  }  
+  }
 
   notifyUserEvent(type: UserEventType, data: any): void {
     this.sendToAll(`user:${type}`, data);
@@ -74,7 +68,7 @@ export class NotificationsService {
   notifyVehicleEntry(data: any): void {
     this.notifyAccessLog('entry', data);
   }
-  
+
   notifyVehicleExit(data: any): void {
     this.notifyAccessLog('exit', data);
   }
@@ -105,13 +99,23 @@ export class NotificationsService {
   notifyUserDeleted(data: any): void {
     this.notifyUserEvent('deleted', data);
   }
-  notifyVehicleCreated(data: any): void {
-    this.notifyVehicleEvent('created', data);
+  notifyVehicleCreated(data: any): Promise<void> {
+    return new Promise((resolve) => {
+      try {
+        this.notifyVehicleEvent('created', data);
+        resolve();
+      }
+      catch (error) {
+        this.logger.error('Error notifying vehicle created:', error);
+        resolve();
+      }
+    });
   }
+
   notifyVehicleUpdated(data: any): void {
     this.notifyVehicleEvent('updated', data);
   }
   notifyVehicleDeleted(data: any): void {
     this.notifyVehicleEvent('deleted', data);
-  } 
+  }
 }

@@ -6,11 +6,14 @@ export class VehicleType {
   @PrimaryGeneratedColumn()
   id: number;
 
-  @Column()
+  @Column({ unique: true, length: 50 })
   name: string;
 
-  @Column()
+  @Column({ type: 'text', nullable: true })
   description: string;
+
+  @Column({ type: 'int', default: 15 })
+  allowed_time: number;
 
   @OneToOne(() => Vehicle, (vehicle) => vehicle.type)
   vehicle: Vehicle;

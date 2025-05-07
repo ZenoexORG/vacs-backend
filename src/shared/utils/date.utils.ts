@@ -16,21 +16,31 @@ export function getMonthRange(month: number, year?: number): { start: Date; end:
   };
 }
 
-export function getDateRange(baseDate: Date = new Date()) {
-  const base = moment.tz(baseDate, 'America/Bogota').startOf('day');
-  const tomorrow = base.clone().add(1, 'day');
-  return {
-    base: base.utc().toDate(),
-    tomorrow: tomorrow.utc().toDate()
-  };
-}
+export function getDateRange(baseDate = new Date()) {
+  let localDate;
 
-export function formatReportDate(date: Date | string): string {  
-  const d = moment.tz(date, 'America/Bogota');
-  return d.format('DD [de] MMMM [de] YYYY');
+  if (baseDate instanceof Date) {
+    const dateString = baseDate.toISOString().split('T')[0];
+    localDate = moment.tz(dateString, 'America/Bogota');
+  } else {
+    localDate = moment.tz(baseDate, 'America/Bogota');
+  }
+
+  const startOfDay = localDate.clone().startOf('day');
+  const endOfDay = localDate.clone().endOf('day');
+
+  return {
+    base: startOfDay.utc().toDate(),
+    tomorrow: endOfDay.utc().toDate()
+  };
 }
 
 export function formatDate(date: Date | string, format: string = 'YYYY-MM-DD'): string {
   const d = moment.tz(date, 'America/Bogota');
   return d.format(format);
+}
+
+export function normalizeDateToUTC(date: Date | string): Date {
+  const d = moment.tz(date, 'America/Bogota');
+  return d.utc().toDate();
 }

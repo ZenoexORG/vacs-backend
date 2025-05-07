@@ -46,13 +46,9 @@ COOKIE_SECRET=your_strong_cookie_secret
 
 # API Keys
 DEVICE_API_KEY=your_strong_random_generated_api_key
-```
 
-4. Run database migrations
-```bash
-npm run migration:run
-# or
-yarn migration:run
+# Client URL (for CORS)
+CLIENT_URL=http://localhost:4200
 ```
 
 ## 🚀 Running the Application
@@ -84,8 +80,22 @@ yarn start:prod
 Once the server is running, you can access the API documentation at:
 
 ```
-http://localhost:{{PORT}}/docs
+http://localhost:{PORT}/docs
 ```
+
+The API is organized around resource-based endpoints:
+
+- `/auth` - Authentication and authorization
+- `/employees` - Employee management
+- `/users` - User management
+- `/roles` - Role management
+- `/permissions` - Permission management
+- `/vehicles` - Vehicle management
+- `/vehicle-types` - Vehicle type management
+- `/access-logs` - Access log management
+- `/incidents` - Incident management
+- `/incident-messages` - Incident message management
+- `/reports` - Report generation and management
 
 ## 📂 Project Structure
 
@@ -97,20 +107,30 @@ src/
 ├── main.ts
 ├── config/           # Application configuration
 ├── database/         # Database configuration
+├── filters/          # Exception filters
 ├── modules/          # Application modules
 │   ├── access_logs/  # Access logs management
 │   ├── auth/         # Authentication
-│   ├── vehicles/     # Vehicle management
-│   └── ...
+│   ├── daily_reports/# Report generation
+│   ├── dashboard/    # Dashboard data
+│   ├── employees/    # Employee management
+│   ├── incident_messages/ # Incident messages
+│   ├── incidents/    # Incident management
+│   ├── notifications/# Real-time notifications
+│   ├── permissions/  # Permission management
+│   ├── roles/        # Role management
+│   ├── users/        # User management
+│   ├── vehicle_types/# Vehicle type management
+│   └── vehicles/     # Vehicle management
 └── shared/           # Shared resources
-    ├── decorators/
-    ├── dtos/
-    ├── enums/
-    ├── guards/
-    ├── interceptors/
-    ├── interfaces/
-    ├── services/
-    └── utils/
+    ├── decorators/   # Custom decorators
+    ├── dtos/         # Data transfer objects
+    ├── enums/        # Enumerations
+    ├── guards/       # Authentication guards
+    ├── interceptors/ # HTTP interceptors
+    ├── interfaces/   # TypeScript interfaces
+    ├── services/     # Shared services
+    └── utils/        # Utility functions
 ```
 
 ## 🧪 Tests
@@ -134,10 +154,14 @@ yarn test:e2e
 ## ✨ Key Features
 
 - 🚙 Vehicle entry and exit record management
-- 🔐 Role and permission-based authentication and authorization 
-- 📊 Daily and date-range report generation
-- ⚠️ Incident management
-- 📝 API documentation with Swagger
+- 🔐 Role and permission-based authentication and authorization
+- 📊 Daily and date-range report generation with PDF export
+- 📈 Charts and statistics for vehicle traffic analysis
+- ⚠️ Incident management system with threaded messages
+- 🔔 Real-time notifications via WebSockets
+- 🌐 RESTful API with comprehensive Swagger documentation
+- 🔄 Automated daily report generation
+- 🧩 Modular architecture for easy extensibility
 
 ## 🛠️ Technologies
 
@@ -146,6 +170,28 @@ yarn test:e2e
 - 🐘 PostgreSQL - Advanced open source database
 - 🔑 JWT - For secure authentication
 - 📋 Swagger - For comprehensive API documentation
+- 📊 ChartJS - For generating report charts and visualizations
+- 📄 PDFKit - For generating PDF reports
+- 🔄 Socket.IO - For real-time notifications
+
+## 👨‍💻 Contributors
+
+<div style="display:flex; flex-wrap: wrap; gap: 10px;">
+    <a href="https://github.com/L30N4RD018" target="_blank">
+        <img src="https://github.com/L30N4RD018.png" width="60" height="60" alt="Leonardo Mendoza" style="border-radius:50%">
+    </a>
+    <a href="https://github.com/XNeyMo" target="_blank">
+        <img src="https://github.com/XNeyMo.png" width="60" height="60" alt="Neyan Montes" style="border-radius:50%">
+    </a>
+    <a href="https://github.com/AAlvarinoB" target="_blank">
+        <img src="https://github.com/AAlvarinoB.png" width="60" height="60" alt="Alberto Alvarino" style="border-radius:50%">
+    </a>
+    <a href="https://github.com/MichaelTaboada2003
+" target="_blank">
+        <img src="https://github.com/MichaelTaboada2003
+.png" width="60" height="60" alt="Michael Taboada" style="border-radius:50%">
+    </a>
+</div>
 
 ## 📄 License
 

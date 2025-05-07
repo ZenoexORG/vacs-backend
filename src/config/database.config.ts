@@ -13,4 +13,9 @@ export const getDatabaseConfig = async (
   ssl: configService.get<boolean>('DB_SSL'),
   autoLoadEntities: true,
   synchronize: false,
+  extra: {
+    max: 20,
+    min: 5,
+    idleTimeoutMillis: 30000,
+  }
 });

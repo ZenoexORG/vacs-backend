@@ -6,7 +6,7 @@ import { Incident } from '../../incidents/entities/incident.entity';
 import { VehicleType } from '../../vehicle_types/entities/vehicle-type.entity';
 import { DailyReportData } from '../interfaces/dailyReportData.interface';
 import { HourlyData } from '../interfaces/hourlyData.interface';
-import { getDateRange } from 'src/shared/utils/date.utils';
+import { formatDate, getDateRange, normalizeDateToUTC } from 'src/shared/utils/date.utils';
 import { hourUtcToLocal, initializeHourlyData } from 'src/shared/utils/hour.utils';
 import { DateRangeDto } from '../dto/date-range.dto';
 
@@ -27,12 +27,12 @@ export class ReportDataService {
     @InjectRepository(VehicleType)
     private readonly vehicleTypesRepository: Repository<VehicleType>,
   ) { }
-  
+
   async getReportData(targetDate?: Date): Promise<DailyReportData> {
     try {
-      const dateRange = this.getDateRangeForTarget(targetDate);
-      
-      this.logger.debug(`Generando datos para reporte: ${dateRange.base.toISOString()} - ${dateRange.tomorrow.toISOString()}`);
+      const dateRange = getDateRange(targetDate);
+
+      this.logger.debug(`Generando datos para reporte: ${formatDate(dateRange.base)} - ${formatDate(dateRange.tomorrow)}`);
 
       const [
         total_entries,
@@ -75,124 +75,6 @@ export class ReportDataService {
       throw error;
     }
   }
-  
-  async getConsolidatedRangeData(dateRange: DateRangeDto): Promise<DailyReportData> {
-    try {
-      const { startDate, endDate } = dateRange;      
-      const adjustedEndDate = new Date(endDate);
-      adjustedEndDate.setHours(23, 59, 59, 999);
-
-      this.logger.debug(`Generando datos consolidados para rango: ${startDate.toISOString()} - ${adjustedEndDate.toISOString()}`);
-      
-      const customRange = { base: startDate, tomorrow: adjustedEndDate };
-
-      const [
-        total_entries,
-        total_exits,
-        total_incidents,
-        active_vehicles,
-        entries_by_hour,
-        exits_by_hour,
-        incidents_by_hour,
-        entries_by_type,
-        incidents_by_type,
-        average_time
-      ] = await Promise.all([
-        this.getTotalEntries(customRange),
-        this.getTotalExits(customRange),
-        this.getTotalIncidents(customRange),
-        this.getActiveVehicles(customRange),
-        this.getEntriesByHour(customRange),
-        this.getExitsByHour(customRange),
-        this.getIncidentsByHour(customRange),
-        this.getEntriesByType(customRange),
-        this.getIncidentsByType(customRange),
-        this.getAverageTime(customRange)
-      ]);
-
-      return {
-        total_entries,
-        total_exits,
-        total_incidents,
-        active_vehicles,
-        entries_by_hour,
-        exits_by_hour,
-        incidents_by_hour,
-        entries_by_type,
-        incidents_by_type,
-        average_time,
-      };
-    } catch (error) {
-      this.logger.error(`Error al generar datos consolidados: ${error.message}`, error.stack);
-      throw error;
-    }
-  }
-  async getDailyDataForRange(dateRange: DateRangeDto): Promise<{ date: Date; data: DailyReportData }[]> {
-    const { startDate, endDate } = dateRange;
-    const result: { date: Date; data: DailyReportData }[] = [];
-
-    try {
-      let currentDate = new Date(startDate);
-      while (currentDate <= endDate) {
-        const data = await this.getReportData(new Date(currentDate));
-        result.push({
-          date: new Date(currentDate),
-          data
-        });
-                
-        currentDate.setDate(currentDate.getDate() + 1);
-      }
-
-      return result;
-    } catch (error) {
-      this.logger.error(`Error al generar datos diarios para rango: ${error.message}`, error.stack);
-      throw error;
-    }
-  }
-
-  async getWeekdayTrends(months: number = 3): Promise<Record<string, any>> {
-    try {      
-      const startDate = new Date();
-      startDate.setMonth(startDate.getMonth() - months);
-      startDate.setHours(0, 0, 0, 0);
-      
-      const endDate = new Date();
-      endDate.setHours(23, 59, 59, 999);
-
-      const weekdayData = await this.accessLogsRepository
-        .createQueryBuilder('accessLog')
-        .select('EXTRACT(DOW FROM accessLog.entry_date)', 'weekday')
-        .addSelect('COUNT(*)', 'entries')
-        .addSelect('COUNT(DISTINCT accessLog.vehicle_id)', 'unique_vehicles')
-        .where('accessLog.entry_date BETWEEN :startDate AND :endDate', { startDate, endDate })
-        .groupBy('weekday')
-        .orderBy('weekday')
-        .getRawMany();
-              
-      const weekdayNames = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
-      
-      const formattedData = weekdayData.map(day => ({
-        day: weekdayNames[parseInt(day.weekday)],
-        entries: parseInt(day.entries),
-        uniqueVehicles: parseInt(day.unique_vehicles)
-      }));
-      
-      return {
-        weekdayTrends: formattedData
-      };
-    } catch (error) {
-      this.logger.error(`Error al obtener tendencias por día: ${error.message}`, error.stack);
-      throw error;
-    }
-  }
-  
-  private getDateRangeForTarget(targetDate?: Date): DateRange {
-		if (targetDate) {			
-			return getDateRange(targetDate);
-		} else {
-			return getDateRange();
-		}
-	}
 
   private async getTotalEntries(dateRange: DateRange = getDateRange()): Promise<number> {
     try {
@@ -207,7 +89,7 @@ export class ReportDataService {
       return 0;
     }
   }
-  
+
   private async getTotalExits(dateRange: DateRange = getDateRange()): Promise<number> {
     try {
       const { base, tomorrow } = dateRange;
@@ -235,7 +117,7 @@ export class ReportDataService {
       return 0;
     }
   }
-  
+
   private async getActiveVehicles(dateRange: DateRange = getDateRange()): Promise<number> {
     try {
       const { base, tomorrow } = dateRange;
@@ -250,7 +132,7 @@ export class ReportDataService {
       return 0;
     }
   }
-  
+
   private async getEntriesByHour(dateRange: DateRange = getDateRange()): Promise<HourlyData> {
     try {
       const { base, tomorrow } = dateRange;
@@ -275,7 +157,7 @@ export class ReportDataService {
       return initializeHourlyData();
     }
   }
-  
+
   private async getExitsByHour(dateRange: DateRange = getDateRange()): Promise<HourlyData> {
     try {
       const { base, tomorrow } = dateRange;
@@ -299,7 +181,7 @@ export class ReportDataService {
       return initializeHourlyData();
     }
   }
-  
+
   private async getIncidentsByHour(dateRange: DateRange = getDateRange()): Promise<HourlyData> {
     try {
       const { base, tomorrow } = dateRange;
@@ -323,7 +205,7 @@ export class ReportDataService {
       return initializeHourlyData();
     }
   }
-  
+
   private async getEntriesByType(dateRange: DateRange = getDateRange()): Promise<HourlyData> {
     try {
       const { base, tomorrow } = dateRange;
@@ -346,7 +228,7 @@ export class ReportDataService {
       return {};
     }
   }
-  
+
   private async getIncidentsByType(dateRange: DateRange = getDateRange()): Promise<HourlyData> {
     try {
       const { base, tomorrow } = dateRange;
@@ -371,7 +253,7 @@ export class ReportDataService {
       return {};
     }
   }
-  
+
   private async initializeByTypeData(): Promise<HourlyData> {
     try {
       const vehicleTypes = await this.vehicleTypesRepository.find();
@@ -384,7 +266,7 @@ export class ReportDataService {
       return {};
     }
   }
-  
+
   private async getAverageTime(dateRange: DateRange = getDateRange()): Promise<number> {
     try {
       const { base, tomorrow } = dateRange;
@@ -402,7 +284,7 @@ export class ReportDataService {
       return 0;
     }
   }
-  
+
   async getPeakHours(dateRange?: DateRange): Promise<Record<string, any>> {
     try {
       const range = dateRange || getDateRange();
@@ -410,7 +292,7 @@ export class ReportDataService {
         this.getEntriesByHour(range),
         this.getExitsByHour(range)
       ]);
-      
+
       let maxEntries = 0;
       let peakEntryHour = 0;
       Object.entries(entriesByHour).forEach(([hour, count]) => {
@@ -419,7 +301,7 @@ export class ReportDataService {
           peakEntryHour = parseInt(hour);
         }
       });
-      
+
       let maxExits = 0;
       let peakExitHour = 0;
       Object.entries(exitsByHour).forEach(([hour, count]) => {

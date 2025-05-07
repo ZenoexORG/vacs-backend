@@ -1,8 +1,10 @@
+import { IncidentMessage } from 'src/modules/incident_messages/entities/incident_messages.entity';
 import {
   Entity,
   Column,
   PrimaryGeneratedColumn,
-  CreateDateColumn,
+  JoinColumn,
+  OneToMany
 } from 'typeorm';
 
 @Entity('incidents')
@@ -13,12 +15,16 @@ export class Incident {
   @Column()
   vehicle_id: string;
 
-  @CreateDateColumn({ type: 'timestamp', default: () => 'CURRENT_TIMESTAMP' })
+  @Column({ type: 'timestamptz' })
   incident_date: Date;
 
-  @Column({ type: 'timestamp', nullable: true })
-  solution_date: Date;
+  @Column({ type: 'varchar', length: 20 })
+  priority: string;
 
-  @Column()
-  comment: string;
+  @Column({ type: 'boolean', default: false })
+  status: boolean;
+
+  @OneToMany(() => IncidentMessage, (incidentMessage) => incidentMessage.incident)
+  @JoinColumn({ name: 'incident_id' })
+  incident_messages: IncidentMessage[];
 }

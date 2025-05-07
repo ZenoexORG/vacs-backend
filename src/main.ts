@@ -1,6 +1,5 @@
-import { LocalToUTCInterceptor } from './shared/interceptors/local-to-utc.interceptor';
-import { UTCToLocalInterceptor } from './shared/interceptors/utc-to-loca.interceptor';
 import { swaggerConfig } from './config/swagger.config';
+import { ValidationPipe } from '@nestjs/common';
 import { SwaggerModule } from '@nestjs/swagger';
 import * as cookieParser from 'cookie-parser';
 import { NestFactory } from '@nestjs/core';
@@ -13,6 +12,16 @@ async function bootstrap() {
     origin: process.env.CLIENT_URL || 'http://localhost:3000',
     credentials: true,
   })
+
+  app.useGlobalPipes(new ValidationPipe({
+    whitelist: true,
+    transform: true,
+    forbidNonWhitelisted: true,
+    stopAtFirstError: true,
+    transformOptions: {
+      enableImplicitConversion: true,
+    },
+  }));
 
   const document = SwaggerModule.createDocument(app, swaggerConfig);
   SwaggerModule.setup('docs', app, document, {
@@ -28,7 +37,6 @@ async function bootstrap() {
   });
 
   app.use(cookieParser(process.env.COOKIE_SECRET || 'super_safe_secret'));
-  app.useGlobalInterceptors(new LocalToUTCInterceptor(), new UTCToLocalInterceptor());  
   await app.listen(process.env.PORT ?? 3000);
 }
 

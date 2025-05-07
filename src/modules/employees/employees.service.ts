@@ -23,7 +23,7 @@ export class EmployeesService {
     private readonly paginationService: PaginationService,
     @Inject(forwardRef(() => NotificationsService))
     private readonly notificationsService: NotificationsService,
-  ) {}
+  ) { }
 
   async create(createEmployeeDto: CreateEmployeeDto): Promise<Employee> {
     const existingEmployee = await this.employeesRepository.findOne({
@@ -31,7 +31,7 @@ export class EmployeesService {
         { username: createEmployeeDto.username },
         { id: createEmployeeDto.id },
       ],
-    });    
+    });
     if (existingEmployee) {
       throw new BadRequestException(
         existingEmployee.username === createEmployeeDto.username
@@ -58,7 +58,7 @@ export class EmployeesService {
       data: this.formatEmployeesWithPermissions(result.data),
       meta: result.meta
     }
-  }    
+  }
 
   async findOne(id: string) {
     const employee = await this.employeesRepository.findOne({
@@ -71,7 +71,7 @@ export class EmployeesService {
     return employee;
   }
 
-  async update(id: string, updateEmployeeDto: UpdateEmployeeDto) {    
+  async update(id: string, updateEmployeeDto: UpdateEmployeeDto) {
     const existingEmployee = await this.employeesRepository.findOne({
       where: { id },
     });
@@ -86,12 +86,12 @@ export class EmployeesService {
       if (duplicateUsername) {
         throw new BadRequestException('Username already exists');
       }
-    }    
+    }
     const updatedEmployee = this.employeesRepository.create({
       ...existingEmployee,
       ...updateEmployeeDto,
     });
-    this.notificationsService.notifyEmployeeUpdated(updatedEmployee);    
+    this.notificationsService.notifyEmployeeUpdated(updatedEmployee);
     return this.employeesRepository.save(updatedEmployee);
   }
 
@@ -129,7 +129,7 @@ export class EmployeesService {
 
   private formatPermissions(permissions: Permission[]): string[] {
     return permissions.map(permission => {
-      const [category, action] = permission.name.split(':');            
+      const [category, action] = permission.name.split(':');
       return `${category}:${action}`;
     });
   }

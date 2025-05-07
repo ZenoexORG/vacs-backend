@@ -16,7 +16,7 @@ export class IncidentsService {
     private readonly incidentRepository: Repository<Incident>,
     private readonly paginationService: PaginationService,
     private readonly notificationsService: NotificationsService,
-  ) {}
+  ) { }
 
   async create(createIncidentDto: CreateIncidentDto) {
     const newIncident = await this.incidentRepository.save(createIncidentDto);
@@ -32,6 +32,7 @@ export class IncidentsService {
       limit || Number.MAX_SAFE_INTEGER,
       {
         order: { id: 'ASC' },
+        relations: { incident_messages: true },
       },
     );
     return {

@@ -1,4 +1,4 @@
-import { IsString, IsNotEmpty, IsEnum, Matches } from 'class-validator';
+import { IsString, IsNotEmpty, IsEnum, IsHexColor } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
 import { KindRole } from 'src/shared/enums';
 
@@ -8,15 +8,14 @@ export class CreateRoleDto {
   @IsNotEmpty({ message: 'Name is required' })
   name: string;
 
-  @ApiProperty({ description: 'Rol type', example: 'UTB' })
-  @IsNotEmpty({ message: 'Type is required' })
-  @IsEnum(KindRole, { message: 'Type must be a valid value' })
-  @IsString({ message: 'Type must be a string' })
+  @ApiProperty({ description: 'Role type', example: 'utb' })
+  @IsEnum(KindRole, { message: 'Role type must be one of the following: utb, admin, user' })
+  @IsString({ message: 'Role type must be a string' })
+  @IsNotEmpty({ message: 'Role type is required' })
   type: KindRole;
 
-  @ApiProperty({description: 'Role color', example: '#FF5733'})
-  @IsString({ message: 'Color must be a string' })
+  @ApiProperty({ description: 'Role color', example: '#FF5733' })
+  @IsHexColor({ message: 'Color must be a valid hex color code' })
   @IsNotEmpty({ message: 'Color is required' })
-  @Matches(/^#[0-9A-F]{6}$/i, { message: 'Color must be a valid hex color code' })
   color: string;
 }

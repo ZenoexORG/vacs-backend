@@ -10,7 +10,7 @@ import { AccessLog } from './entities/access-log.entity';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, IsNull, In, Between } from 'typeorm';
 import * as moment from 'moment';
-import { parse } from 'path';
+import { TimezoneService } from 'src/shared/services/timezone.service';
 
 @Injectable()
 export class AccessLogsService {
@@ -18,30 +18,33 @@ export class AccessLogsService {
     @InjectRepository(AccessLog)
     private accessLogRepository: Repository<AccessLog>,
     @InjectRepository(Vehicle)
-    private vehicleRepository: Repository<Vehicle>,    
+    private vehicleRepository: Repository<Vehicle>,
     private readonly paginationService: PaginationService,
     private readonly notificationsService: NotificationsService,
-  ) {}
+    private readonly timezoneService: TimezoneService,
+  ) { }
 
   async create(createAccessLogDto: CreateAccessLogDto) {
     const { vehicle_id, timestamp, access_type } = createAccessLogDto;
-    this.validateRequiredFields(vehicle_id, timestamp, access_type);
-    if (!this.validateColombianLicensePlate(vehicle_id)) {
-      throw new BadRequestException('Invalid vehicle ID format. Expected Colombian license plate format');
+
+    const newTimestamp = this.timezoneService.formatDate(timestamp);
+
+    if (!newTimestamp) {
+      throw new BadRequestException('Invalid timestamp format');
     }
-    const newTimestamp = this.validateTimestamp(timestamp);
-    const vehicle = await this.vehicleRepository.findOne({ where: { id: vehicle_id }, relations: {type: true} });
-    if (access_type === 'entry'){
-      return this.handleEntryAccess(vehicle_id, newTimestamp, vehicle ?? undefined);      
+
+    const vehicle = await this.vehicleRepository.findOne({ where: { id: vehicle_id }, relations: { type: true } });
+    if (access_type === 'entry') {
+      return this.handleEntryAccess(vehicle_id, newTimestamp, vehicle ?? undefined);
     } else if (access_type === 'exit') {
       return this.handleExitAccess(vehicle_id, newTimestamp);
     }
-    throw new BadRequestException('Invalid access type. Expected "entry" or "exit"');    
+    throw new BadRequestException('Invalid access type. Expected "entry" or "exit"');
   }
 
   async findAll(paginationDto: PaginationDto) {
-    const { page , limit } = paginationDto;
-    
+    const { page, limit } = paginationDto;
+
     const result = await this.paginationService.paginate(
       this.accessLogRepository,
       page || 1,
@@ -49,7 +52,7 @@ export class AccessLogsService {
       {
         order: { id: 'DESC' },
       },
-    );   
+    );
     const enrichedLogs = await this.enrichAccessLogs(result.data);
     return {
       data: enrichedLogs,
@@ -79,7 +82,7 @@ export class AccessLogsService {
       throw new NotFoundException('Access log not found');
     }
     return this.accessLogRepository.delete(id);
-  }  
+  }
 
   async getVehicleEntriesByDay(month: number, year?: number) {
     const { start, end } = getMonthRange(month, year);
@@ -96,7 +99,7 @@ export class AccessLogsService {
       .groupBy('log.entry_date')
       .orderBy('log.entry_date', 'ASC')
       .getRawMany();
-    
+
     const daysMap = new Map();
     for (let i = 1; i <= daysInMonth; i++) {
       const day = i.toString().padStart(2, '0');
@@ -108,10 +111,10 @@ export class AccessLogsService {
       daysMap.set(day, parseInt(entry.total));
     })
 
-    return Array.from(daysMap).map(([day, total]) => ({day, total}))
+    return Array.from(daysMap).map(([day, total]) => ({ day, total }))
   }
 
-  async countEntriesByMonth(month: number, year?: number) {    
+  async countEntriesByMonth(month: number, year?: number) {
     const { start, end } = getMonthRange(month, year);
     const result = await this.accessLogRepository.count({
       where: { entry_date: Between(start, end) },
@@ -137,34 +140,7 @@ export class AccessLogsService {
     );
   }
 
-  private validateColombianLicensePlate(plateNumber: string): boolean {
-    const carPlateRegex = /^[A-Z]{3}\d{3}$/;
-    const motorcyclePlateRegex = /^(?:[A-Z]{3}\d{2}[A-Z]|[A-Z]{2}\d{2}[A-Z])$/;
-    const diplomaticPlateRegex = /^(CD|CC|OI)\d{4}$/;
-    return carPlateRegex.test(plateNumber) ||
-           motorcyclePlateRegex.test(plateNumber) ||
-           diplomaticPlateRegex.test(plateNumber);
-  }
-
-  private validateRequiredFields(vehicle_id: string, timestamp: Date, access_type: string) {
-    if (!vehicle_id) throw new BadRequestException('Vehicle ID is required');
-    if (!timestamp) throw new BadRequestException('Timestamp is required');
-    if (!access_type) throw new BadRequestException('Access type is required');
-  }
-
-  private validateTimestamp(timestamp: Date): moment.Moment {
-    const newTimestamp = moment(timestamp);
-    const now = moment();
-    if (!newTimestamp.isValid()) {
-      throw new BadRequestException('Invalid date format. Expected ISO 8601 format');
-    }
-    if (newTimestamp.isAfter(now)) {
-      throw new BadRequestException('Timestamp cannot be in the future');
-    }    
-    return newTimestamp;
-  }
-
-  private async handleEntryAccess(vehicle_id: string, timestamp: moment.Moment, vehicle?: Vehicle) {
+  private async handleEntryAccess(vehicle_id: string, timestamp: Date, vehicle?: Vehicle) {
     const latestAccessLog = await this.accessLogRepository.findOne({
       where: { vehicle_id, exit_date: IsNull() },
       order: { entry_date: 'DESC' },
@@ -174,14 +150,14 @@ export class AccessLogsService {
     }
     const newAccessLog = await this.accessLogRepository.save({
       vehicle_id,
-      entry_date: timestamp.toDate(),
+      entry_date: timestamp,
       vehicle_type: vehicle?.type?.name || 'unregistered',
     });
     this.notificationsService.notifyVehicleEntry(newAccessLog);
     return newAccessLog;
   }
 
-  private async handleExitAccess(vehicle_id: string, timestamp: moment.Moment) {
+  private async handleExitAccess(vehicle_id: string, timestamp: Date) {
     const latestAccessLog = await this.accessLogRepository.findOne({
       where: { vehicle_id, exit_date: IsNull() },
       order: { entry_date: 'DESC' },
@@ -189,17 +165,16 @@ export class AccessLogsService {
     if (!latestAccessLog) {
       throw new BadRequestException('Vehicle does not have an entry without exit');
     }
-    const entryDate = moment(latestAccessLog.entry_date);
-    if (timestamp.isBefore(entryDate)) {
-      throw new BadRequestException('Exit date cannot be before entry date');
+    if (timestamp <= latestAccessLog.entry_date) {
+      throw new BadRequestException('Exit date must be after entry date');
     }
     await this.accessLogRepository.update(latestAccessLog.id, {
-      exit_date: timestamp.toDate(),
+      exit_date: timestamp,
     });
     const updatedAccessLog = await this.accessLogRepository.findOne({
       where: { id: latestAccessLog.id },
     });
     this.notificationsService.notifyVehicleExit(updatedAccessLog);
-    return updatedAccessLog;    
+    return updatedAccessLog;
   }
 }

@@ -1,4 +1,4 @@
-import { IsString, IsOptional, IsEnum } from 'class-validator';
+import { IsString, IsOptional, IsEnum, IsInt, IsPositive } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
 import { KindVehicle } from 'src/shared/enums';
 
@@ -15,4 +15,14 @@ export class CreateVehicleTypeDto {
   @IsString({ message: 'Description must be a string' })
   @IsOptional()
   description: string;
+
+  @ApiProperty({
+    description: 'Allowed time in minutes for this vehicle type',
+    example: 15,
+    default: 15
+  })
+  @IsInt({ message: 'Allowed time must be an integer' })
+  @IsPositive({ message: 'Allowed time must be positive' })
+  @IsOptional()
+  allowed_time?: number;
 }

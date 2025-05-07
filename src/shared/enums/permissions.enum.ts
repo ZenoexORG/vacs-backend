@@ -41,6 +41,11 @@ export enum AppPermissions {
     INCIDENTS_EDIT = 'incidents:edit',
     INCIDENTS_DELETE = 'incidents:delete',
 
+    INCIDENT_MESSAGES_VIEW = 'incident-messages:view',
+    INCIDENT_MESSAGES_CREATE = 'incident-messages:create',
+    INCIDENT_MESSAGES_EDIT = 'incident-messages:edit',
+    INCIDENT_MESSAGES_DELETE = 'incident-messages:delete',
+
     DASHBOARD_VIEW = 'dashboard:view',
 
     REPORTS_CREATE = 'daily-reports:create',
