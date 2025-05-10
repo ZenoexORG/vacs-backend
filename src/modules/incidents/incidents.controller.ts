@@ -17,7 +17,7 @@ export class IncidentsController {
   @ApiBody({ type: CreateIncidentDto })
   @Auth(AppPermissions.INCIDENTS_CREATE)
   @Post()
-  @ConvertDates(['incident_date', 'solution_date'])
+  @ConvertDates(['date', 'history[].created_at'])
   async create(@Body() createIncidentDto: CreateIncidentDto) {
     return this.incidentsService.create(createIncidentDto);
   }
@@ -29,7 +29,7 @@ export class IncidentsController {
   @ApiQuery({ name: 'priority', description: 'Incident priority', required: false })
   @Auth(AppPermissions.INCIDENTS_VIEW)
   @Get()
-  @ConvertDates(['incident_date', 'solution_date'])
+  @ConvertDates(['date', 'history[].created_at'])
   async findAll(@Query() paginationDto: IncidentsPaginationDto) {
     return this.incidentsService.findAll(paginationDto);
   }
@@ -38,7 +38,7 @@ export class IncidentsController {
   @ApiParam({ name: 'id', description: 'Incident unique id', example: 1 })
   @Auth(AppPermissions.INCIDENTS_VIEW)
   @Get(':id')
-  @ConvertDates(['incident_date', 'solution_date'])
+  @ConvertDates(['date', 'history[].created_at'])
   async findOne(@Param('id') id: number) {
     return this.incidentsService.findOne(id);
   }

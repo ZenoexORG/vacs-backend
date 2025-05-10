@@ -9,6 +9,7 @@ import { IncidentsPaginationDto } from './dto/incidents_pagination.dto';
 import { getMonthRange } from '../../shared/utils/date.utils';
 import { PaginationService } from 'src/shared/services/pagination.service';
 import { NotificationsService } from '../notifications/notifications.service';
+import { IncidentStatus } from '../../shared/enums/incidentStatus.enum';
 
 @Injectable()
 export class IncidentsService {
@@ -53,14 +54,20 @@ export class IncidentsService {
       {
         where: Object.keys(where).length > 0 ? where : undefined,
         order: { id: 'ASC' },
-        relations: { incident_messages: true, access_log: true },
+        relations: { incident_messages: { author: true }, access_log: true },
         select: {
           id: true,
           access_log_id: true,
           date: true,
           priority: true,
           status: true,
-          incident_messages: true,
+          incident_messages: {
+            id: true,
+            incident_id: true,
+            message: true,
+            author: { name: true, last_name: true },
+            created_at: true,
+          },
           access_log: {
             vehicle_id: true
           }
@@ -69,15 +76,33 @@ export class IncidentsService {
       },
     );
     const transformedData = result.data.map(incident => {
-      const { access_log, ...rest } = incident;
+      const { access_log, incident_messages, ...rest } = incident;
+      const formattedMessages = incident_messages.map(message => {
+        const { author, ...restMessage } = message;
+        return {
+          ...restMessage,
+          author: `${author.name} ${author.last_name}`,
+        }
+      });
       return {
         ...rest,
-        vehicle_id: access_log?.vehicle_id || null
+        vehicle_id: access_log?.vehicle_id || null,
+        history: formattedMessages,
       };
+    });
+    const openCount = await this.incidentRepository.count({
+      where: { status: IncidentStatus.OPEN }
+    });
+    const closedCount = await this.incidentRepository.count({
+      where: { status: IncidentStatus.CLOSED }
     });
     return {
       data: transformedData,
-      meta: result.meta,
+      meta: {
+        ...result.meta,
+        open: openCount,
+        closed: closedCount,
+      }
     };
   }
 
@@ -86,24 +111,38 @@ export class IncidentsService {
       const incident = await this.incidentRepository.findOne(
         {
           where: { id },
-          relations: { incident_messages: true, access_log: true },
+          relations: { incident_messages: { author: true }, access_log: true },
           select: {
             id: true,
             access_log_id: true,
             date: true,
             priority: true,
             status: true,
-            incident_messages: true,
+            incident_messages: {
+              id: true,
+              incident_id: true,
+              message: true,
+              author: { name: true, last_name: true },
+              created_at: true,
+            },
             access_log: {
               vehicle_id: true
             }
           }
         });
       if (!incident) handleNotFoundError('Incident', id, this.logger);
-      const { access_log, ...rest } = incident;
+      const { access_log, incident_messages, ...rest } = incident;
+      const formattedMessages = incident.incident_messages.map(message => {
+        const { author, ...restMessage } = message;
+        return {
+          ...restMessage,
+          author: `${author.name} ${author.last_name}`,
+        }
+      })
       return {
         ...rest,
-        vehicle_id: access_log?.vehicle_id || null
+        vehicle_id: access_log?.vehicle_id || null,
+        history: formattedMessages,
       };
     } catch (error) {
       handleDatabaseError(error, 'finding incident', { id }, this.logger,
@@ -135,7 +174,10 @@ export class IncidentsService {
     try {
       const incident = await this.incidentRepository.findOne({ where: { id } });
       if (!incident) return handleNotFoundError('Incident', id, this.logger);
-      return this.incidentRepository.delete(id);
+      const result = await this.incidentRepository.delete(id);
+      const totalIncidents = await this.incidentRepository.count();
+      this.notificationsService.notifyIncidentCount(totalIncidents);
+      return result;
     } catch (error) {
       return handleDatabaseError(
         error,

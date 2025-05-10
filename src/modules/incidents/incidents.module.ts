@@ -12,12 +12,13 @@ import { DwellTimeMonitorService } from './dwell-time-monitor.service';
 import { AccessLog } from '../access_logs/entities/access-log.entity';
 import { VehicleType } from '../vehicle_types/entities/vehicle-type.entity';
 import { TimezoneService } from 'src/shared/services/timezone.service';
+import { IncidentMessage } from '../incident_messages/entities/incident_messages.entity';
 
 
 @Module({
   imports: [
     BullModule.registerQueue({ name: 'dwell-time', }),
-    TypeOrmModule.forFeature([Incident, Vehicle, AccessLog, VehicleType]),
+    TypeOrmModule.forFeature([Incident, Vehicle, AccessLog, VehicleType, IncidentMessage]),
     NotificationsModule,
   ],
   controllers: [IncidentsController],

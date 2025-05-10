@@ -13,6 +13,7 @@ import { ViolationData } from './interfaces/violation_data.interface';
 import { IncidentStatus } from 'src/shared/enums/incidentStatus.enum';
 import { InjectQueue } from '@nestjs/bull';
 import { Queue } from 'bull';
+import { IncidentMessage } from '../incident_messages/entities/incident_messages.entity';
 
 @Injectable()
 export class DwellTimeMonitorService implements OnModuleInit {
@@ -32,6 +33,8 @@ export class DwellTimeMonitorService implements OnModuleInit {
         private readonly configService: ConfigService,
         private readonly timezoneService: TimezoneService,
         @InjectQueue('dwell-time') private readonly dwellTimeQueue: Queue,
+        @InjectRepository(IncidentMessage)
+        private readonly incidentMessageRepository: Repository<IncidentMessage>,
     ) {
         this.defaultThreshold = this.configService.get<number>('DWELL_TIME_DEFAULT_THRESHOLD', 240);
         this.cacheTimeoutMinutes = this.configService.get<number>('DWELL_TIME_CACHE_TIMEOUT_MINUTES', 120);
@@ -91,14 +94,7 @@ export class DwellTimeMonitorService implements OnModuleInit {
         const entryDate = moment(accessLog.entry_date);
         const now = this.timezoneService.getCurrentDate();
         const msToWait = threshold * 60 * 1000 - moment(now).diff(entryDate);
-
-        await this.dwellTimeQueue.add(
-            'check',
-            { accessLogId: accessLog.id },
-            { delay: msToWait, removeOnComplete: true, removeOnFail: true }
-        );
-
-        this.logger.log(`Scheduled dwell time check for AccessLog ${accessLog.id} in ${msToWait / 60000} minutes`);
+        const minutesElapsed = moment(now).diff(entryDate, 'minutes');
 
         if (msToWait > 0) {
             await this.dwellTimeQueue.add(
@@ -106,8 +102,9 @@ export class DwellTimeMonitorService implements OnModuleInit {
                 { accessLogId: accessLog.id },
                 { delay: msToWait, removeOnComplete: true, removeOnFail: true }
             );
-            this.logger.log(`Scheduled dwell time check for AccessLog ${accessLog.id} in ${msToWait / 60000} minutes`);
+            this.logger.log(`Scheduled dwell time check for AccessLog ${accessLog.id} in ${Math.round(msToWait / 60000)} minutes`);
         } else {
+            this.logger.log(`AccessLog ${accessLog.id} has exceeded its maximum allowed time by ${minutesElapsed} minutes`);
             await this.handleDwellTimeJob(accessLog.id);
         }
     }
@@ -139,16 +136,26 @@ export class DwellTimeMonitorService implements OnModuleInit {
         const incidentsDtos = violations.map((violation) => {
             const dto = new CreateIncidentDto();
             dto.access_log_id = violation.log.id;
-            dto.date = this.timezoneService.getCurrentDate().toISOString();
+            dto.date = this.timezoneService.toTimezone(new Date())!;
             dto.priority = this.determinePriorityLevel(violation.minutesElapsed, violation.threshold);
             dto.status = IncidentStatus.OPEN;
             return dto;
         });
 
         try {
-            await Promise.all(
+            const createdIncidents = await Promise.all(
                 incidentsDtos.map(dto => this.incidentsService.create(dto))
             );
+            await Promise.all(
+                createdIncidents.map((incident) => {
+                    return this.incidentMessageRepository.save({
+                        incident: { id: incident.id },
+                        message: 'created',
+                        author: { id: '123456789' }
+                    });
+                })
+            );
+
             return incidentsDtos.length;
         } catch (error) {
             this.logger.error(`Failed to create incidents: ${error.message}`);

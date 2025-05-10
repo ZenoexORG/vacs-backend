@@ -55,7 +55,7 @@ export function handleValidationError(
 	details: Record<string, any> = {},
 	logger: Logger
 ): never {
-	logger.debug(`Validation error: ${message}`, { details });
+	logger.debug(`Validation error: ${message}`);
 	throw new ValidationError(message, details);
 }
 
