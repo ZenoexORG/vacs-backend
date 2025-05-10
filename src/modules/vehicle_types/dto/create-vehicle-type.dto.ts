@@ -23,6 +23,5 @@ export class CreateVehicleTypeDto {
   })
   @IsInt({ message: 'Allowed time must be an integer' })
   @IsPositive({ message: 'Allowed time must be positive' })
-  @IsOptional()
-  allowed_time?: number;
+  allowed_time: number;
 }

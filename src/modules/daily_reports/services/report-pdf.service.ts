@@ -32,7 +32,7 @@ export class ReportPdfService {
 
         doc.end();
       } catch (error) {
-        this.logger.error(`Error generando reporte PDF: ${error.message}`, error.stack);
+        this.logger.error(`Error generando reporte PDF: ${error.message}`);
         reject(error);
       }
     });
@@ -59,7 +59,7 @@ export class ReportPdfService {
         await this.addRangeCharts(doc, reports);
         doc.end();
       } catch (error) {
-        this.logger.error(`Error generando reporte de rango PDF: ${error.message}`, error.stack);
+        this.logger.error(`Error generando reporte de rango PDF: ${error.message}`);
         reject(error);
       }
     });

@@ -1,4 +1,4 @@
-import { Injectable, BadRequestException, NotFoundException } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { PaginationService } from 'src/shared/services/pagination.service';
 import { NotificationsService } from '../notifications/notifications.service';
 import { CreateAccessLogDto } from './dto/create-access-log.dto';
@@ -11,9 +11,13 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, IsNull, In, Between } from 'typeorm';
 import * as moment from 'moment';
 import { TimezoneService } from 'src/shared/services/timezone.service';
+import { handleNotFoundError, handleDatabaseError, handleValidationError } from 'src/shared/utils/errors.utils';
+import { DwellTimeMonitorService } from '../incidents/dwell-time-monitor.service';
+
 
 @Injectable()
 export class AccessLogsService {
+  private readonly logger = new Logger(AccessLogsService.name);
   constructor(
     @InjectRepository(AccessLog)
     private accessLogRepository: Repository<AccessLog>,
@@ -22,24 +26,29 @@ export class AccessLogsService {
     private readonly paginationService: PaginationService,
     private readonly notificationsService: NotificationsService,
     private readonly timezoneService: TimezoneService,
+    private readonly dwellTimeMonitorService: DwellTimeMonitorService,
   ) { }
 
   async create(createAccessLogDto: CreateAccessLogDto) {
-    const { vehicle_id, timestamp, access_type } = createAccessLogDto;
-
-    const newTimestamp = this.timezoneService.formatDate(timestamp);
-
-    if (!newTimestamp) {
-      throw new BadRequestException('Invalid timestamp format');
+    try {
+      const { vehicle_id, timestamp, access_type } = createAccessLogDto;
+      const newTimestamp = this.timezoneService.formatDate(timestamp);
+      if (!newTimestamp) handleValidationError('timestamp', { dto: createAccessLogDto }, this.logger);
+      const vehicle = await this.vehicleRepository.findOne({ where: { id: vehicle_id }, relations: { type: true } });
+      if (access_type === 'entry') {
+        return this.handleEntryAccess(vehicle_id, newTimestamp, vehicle ?? undefined);
+      } else if (access_type === 'exit') {
+        return this.handleExitAccess(vehicle_id, newTimestamp);
+      }
+      handleValidationError('access_type', { dto: createAccessLogDto }, this.logger);
+    } catch (error) {
+      handleDatabaseError(
+        error,
+        'Error creating access log',
+        { dto: createAccessLogDto },
+        this.logger,
+      );
     }
-
-    const vehicle = await this.vehicleRepository.findOne({ where: { id: vehicle_id }, relations: { type: true } });
-    if (access_type === 'entry') {
-      return this.handleEntryAccess(vehicle_id, newTimestamp, vehicle ?? undefined);
-    } else if (access_type === 'exit') {
-      return this.handleExitAccess(vehicle_id, newTimestamp);
-    }
-    throw new BadRequestException('Invalid access type. Expected "entry" or "exit"');
   }
 
   async findAll(paginationDto: PaginationDto) {
@@ -61,57 +70,81 @@ export class AccessLogsService {
   }
 
   async findOne(id: number) {
-    const accessLog = await this.accessLogRepository.findOne({ where: { id } });
-    if (!accessLog) {
-      throw new NotFoundException('Access log not found');
+    try {
+      const accessLog = await this.accessLogRepository.findOne({ where: { id } });
+      if (!accessLog) handleNotFoundError('Access log', id, this.logger);
+      return accessLog;
+    } catch (error) {
+      handleDatabaseError(error, 'finding access log', { id }, this.logger);
     }
-    return accessLog;
   }
 
   async update(id: number, updateAccessLogDto: UpdateAccessLogDto) {
-    const accessLog = await this.accessLogRepository.findOne({ where: { id } });
-    if (!accessLog) {
-      throw new NotFoundException('Access log not found');
+    try {
+      const accessLog = await this.accessLogRepository.findOne({ where: { id } });
+      if (!accessLog) handleNotFoundError('Access log', id, this.logger);
+      return this.accessLogRepository.update(id, updateAccessLogDto);
+    } catch (error) {
+      handleDatabaseError(
+        error,
+        'updating access log',
+        { id, dto: updateAccessLogDto },
+        this.logger,
+      );
     }
-    return this.accessLogRepository.update(id, updateAccessLogDto);
   }
 
   async remove(id: number) {
-    const accessLog = await this.accessLogRepository.findOne({ where: { id } });
-    if (!accessLog) {
-      throw new NotFoundException('Access log not found');
+    try {
+      const accessLog = await this.accessLogRepository.findOne({ where: { id } });
+      if (!accessLog) handleNotFoundError('Access log', id, this.logger);
+      return this.accessLogRepository.delete(id);
+    } catch (error) {
+      handleDatabaseError(
+        error,
+        'deleting access log',
+        { id },
+        this.logger,
+      );
     }
-    return this.accessLogRepository.delete(id);
   }
 
   async getVehicleEntriesByDay(month: number, year?: number) {
-    const { start, end } = getMonthRange(month, year);
+    try {
+      const { start, end } = getMonthRange(month, year);
+      const currentYear = year || moment().year();
+      const daysInMonth = moment(`${currentYear}-${month}`, 'YYYY-MM').daysInMonth();
 
-    const currentYear = year || moment().year();
-    const daysInMonth = moment(`${currentYear}-${month}`, 'YYYY-MM').daysInMonth();
+      const result = await this.accessLogRepository
+        .createQueryBuilder('log')
+        .select('log.entry_date', 'entry_date')
+        .addSelect('COUNT(*)', 'total')
+        .where('log.entry_date IS NOT NULL')
+        .andWhere('log.entry_date BETWEEN :start AND :end', { start, end })
+        .groupBy('log.entry_date')
+        .orderBy('log.entry_date', 'ASC')
+        .getRawMany();
 
-    const result = await this.accessLogRepository
-      .createQueryBuilder('log')
-      .select('log.entry_date', 'entry_date')
-      .addSelect('COUNT(*)', 'total')
-      .where('log.entry_date IS NOT NULL')
-      .andWhere('log.entry_date BETWEEN :start AND :end', { start, end })
-      .groupBy('log.entry_date')
-      .orderBy('log.entry_date', 'ASC')
-      .getRawMany();
+      const daysMap = new Map();
+      for (let i = 1; i <= daysInMonth; i++) {
+        const day = i.toString().padStart(2, '0');
+        daysMap.set(day, null)
+      }
 
-    const daysMap = new Map();
-    for (let i = 1; i <= daysInMonth; i++) {
-      const day = i.toString().padStart(2, '0');
-      daysMap.set(day, null)
+      result.forEach((entry) => {
+        const day = formatDate(entry.entry_date, 'DD');
+        daysMap.set(day, parseInt(entry.total));
+      })
+
+      return Array.from(daysMap).map(([day, total]) => ({ day, total }))
+    } catch (error) {
+      handleDatabaseError(
+        error,
+        'Error getting vehicle entries by day',
+        { month, year },
+        this.logger,
+      );
     }
-
-    result.forEach((entry) => {
-      const day = formatDate(entry.entry_date, 'DD');
-      daysMap.set(day, parseInt(entry.total));
-    })
-
-    return Array.from(daysMap).map(([day, total]) => ({ day, total }))
   }
 
   async countEntriesByMonth(month: number, year?: number) {
@@ -123,58 +156,82 @@ export class AccessLogsService {
   }
 
   private async enrichAccessLogs(accessLogs: AccessLog[]) {
-    const vehicleIds = [...new Set(accessLogs.map((log) => log.vehicle_id))];
-    const vehicles = await this.vehicleRepository.find({
-      where: { id: In(vehicleIds) },
-      relations: ['type'],
-      select: ['id', 'type', 'owner_id'],
-    });
-    const vehicleMap = new Map(vehicles.map((vehicle) => [vehicle.id, vehicle]));
-    return accessLogs.map((log) => {
-      const vehicle = vehicleMap.get(log.vehicle_id);
-      return {
-        ...log,
-        owner_id: vehicle?.owner_id || null,
-      };
+    try {
+      const vehicleIds = [...new Set(accessLogs.map((log) => log.vehicle_id))];
+      const vehicles = await this.vehicleRepository.find({
+        where: { id: In(vehicleIds) },
+        relations: ['type'],
+        select: ['id', 'type', 'owner_id'],
+      });
+      const vehicleMap = new Map(vehicles.map((vehicle) => [vehicle.id, vehicle]));
+      return accessLogs.map((log) => {
+        const vehicle = vehicleMap.get(log.vehicle_id);
+        return {
+          ...log,
+          owner_id: vehicle?.owner_id || null,
+        };
+      }
+      );
+    } catch (error) {
+      handleDatabaseError(
+        error,
+        'Error enriching access logs',
+        { accessLogs },
+        this.logger,
+      );
     }
-    );
   }
 
   private async handleEntryAccess(vehicle_id: string, timestamp: Date, vehicle?: Vehicle) {
-    const latestAccessLog = await this.accessLogRepository.findOne({
-      where: { vehicle_id, exit_date: IsNull() },
-      order: { entry_date: 'DESC' },
-    });
-    if (latestAccessLog) {
-      throw new BadRequestException('Vehicle already has an entry without exit');
+    try {
+      const latestAccessLog = await this.accessLogRepository.findOne({
+        where: { vehicle_id, exit_date: IsNull() },
+        order: { entry_date: 'DESC' },
+      });
+      if (latestAccessLog) handleValidationError('Vehicle already has an entry without exit', { vehicle_id, timestamp }, this.logger);
+      const newAccessLog = await this.accessLogRepository.save({
+        vehicle_id,
+        entry_date: timestamp,
+        vehicle_type: vehicle?.type?.name || 'unregistered',
+      });
+      this.notificationsService.notifyVehicle(newAccessLog);
+      this.dwellTimeMonitorService.scheduleDwellTimeCheck(newAccessLog);
+      return newAccessLog;
+    } catch (error) {
+      handleDatabaseError(
+        error,
+        'Error handling entry access',
+        { vehicle_id, timestamp },
+        this.logger,
+      );
     }
-    const newAccessLog = await this.accessLogRepository.save({
-      vehicle_id,
-      entry_date: timestamp,
-      vehicle_type: vehicle?.type?.name || 'unregistered',
-    });
-    this.notificationsService.notifyVehicleEntry(newAccessLog);
-    return newAccessLog;
   }
 
   private async handleExitAccess(vehicle_id: string, timestamp: Date) {
-    const latestAccessLog = await this.accessLogRepository.findOne({
-      where: { vehicle_id, exit_date: IsNull() },
-      order: { entry_date: 'DESC' },
-    });
-    if (!latestAccessLog) {
-      throw new BadRequestException('Vehicle does not have an entry without exit');
+    try {
+      const latestAccessLog = await this.accessLogRepository.findOne({
+        where: { vehicle_id, exit_date: IsNull() },
+        order: { entry_date: 'DESC' },
+      });
+      if (!latestAccessLog) handleNotFoundError('Access log', vehicle_id, this.logger);
+      if (timestamp <= latestAccessLog.entry_date) {
+        handleValidationError('Exit timestamp must be after entry timestamp', { vehicle_id, timestamp }, this.logger);
+      }
+      await this.accessLogRepository.update(latestAccessLog.id, {
+        exit_date: timestamp,
+      });
+      const updatedAccessLog = await this.accessLogRepository.findOne({
+        where: { id: latestAccessLog.id },
+      });
+      this.notificationsService.notifyVehicle(updatedAccessLog);
+      return updatedAccessLog;
+    } catch (error) {
+      handleDatabaseError(
+        error,
+        'Error handling exit access',
+        { vehicle_id, timestamp },
+        this.logger,
+      );
     }
-    if (timestamp <= latestAccessLog.entry_date) {
-      throw new BadRequestException('Exit date must be after entry date');
-    }
-    await this.accessLogRepository.update(latestAccessLog.id, {
-      exit_date: timestamp,
-    });
-    const updatedAccessLog = await this.accessLogRepository.findOne({
-      where: { id: latestAccessLog.id },
-    });
-    this.notificationsService.notifyVehicleExit(updatedAccessLog);
-    return updatedAccessLog;
   }
 }

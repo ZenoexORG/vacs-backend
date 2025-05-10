@@ -6,9 +6,10 @@ import { Incident } from '../../incidents/entities/incident.entity';
 import { VehicleType } from '../../vehicle_types/entities/vehicle-type.entity';
 import { DailyReportData } from '../interfaces/dailyReportData.interface';
 import { HourlyData } from '../interfaces/hourlyData.interface';
-import { formatDate, getDateRange, normalizeDateToUTC } from 'src/shared/utils/date.utils';
+import { formatDate, getDateRange } from 'src/shared/utils/date.utils';
 import { hourUtcToLocal, initializeHourlyData } from 'src/shared/utils/hour.utils';
-import { DateRangeDto } from '../dto/date-range.dto';
+import { ReportDataFetchError } from 'src/shared/errors/report.errors';
+import { handleDatabaseError, handleReportDataError } from 'src/shared/utils/errors.utils';
 
 interface DateRange {
   base: Date;
@@ -71,56 +72,67 @@ export class ReportDataService {
         average_time,
       };
     } catch (error) {
-      this.logger.error(`Error al generar datos de reporte: ${error.message}`, error.stack);
-      throw error;
+      throw new ReportDataFetchError('Failed to generate complete report data', error);
     }
   }
 
   private async getTotalEntries(dateRange: DateRange = getDateRange()): Promise<number> {
+    const { base, tomorrow } = dateRange;
     try {
-      const { base, tomorrow } = dateRange;
       return await this.accessLogsRepository.count({
         where: {
           entry_date: Between(base, tomorrow),
         }
       });
     } catch (error) {
-      this.logger.warn(`Error al obtener total de entradas: ${error.message}`);
-      return 0;
+      handleReportDataError(
+        error,
+        'total entries count',
+        { dateRange: { base: formatDate(base), tomorrow: formatDate(tomorrow) } },
+        this.logger
+      );
     }
   }
 
   private async getTotalExits(dateRange: DateRange = getDateRange()): Promise<number> {
+    const { base, tomorrow } = dateRange;
     try {
-      const { base, tomorrow } = dateRange;
       return await this.accessLogsRepository.count({
         where: {
           exit_date: Between(base, tomorrow),
         }
       });
     } catch (error) {
-      this.logger.warn(`Error al obtener total de salidas: ${error.message}`);
-      return 0;
+      handleReportDataError(
+        error,
+        'total exits count',
+        { dateRange: { base: formatDate(base), tomorrow: formatDate(tomorrow) } },
+        this.logger
+      )
     }
   }
 
   private async getTotalIncidents(dateRange: DateRange = getDateRange()): Promise<number> {
+    const { base, tomorrow } = dateRange;
     try {
-      const { base, tomorrow } = dateRange;
       return await this.incidentsRepository.count({
         where: {
-          incident_date: Between(base, tomorrow),
+          date: Between(base, tomorrow),
         }
       });
     } catch (error) {
-      this.logger.warn(`Error al obtener total de incidentes: ${error.message}`);
-      return 0;
+      handleReportDataError(
+        error,
+        'total incidents count',
+        { dateRange: { base: formatDate(base), tomorrow: formatDate(tomorrow) } },
+        this.logger
+      );
     }
   }
 
   private async getActiveVehicles(dateRange: DateRange = getDateRange()): Promise<number> {
+    const { base, tomorrow } = dateRange;
     try {
-      const { base, tomorrow } = dateRange;
       const result = await this.accessLogsRepository
         .createQueryBuilder('accessLog')
         .select('COUNT(DISTINCT accessLog.vehicle_id)', 'count')
@@ -128,14 +140,18 @@ export class ReportDataService {
         .getRawOne();
       return result?.count ? parseInt(result.count) : 0;
     } catch (error) {
-      this.logger.warn(`Error al obtener vehículos activos: ${error.message}`);
-      return 0;
+      handleReportDataError(
+        error,
+        'active vehicles count',
+        { dateRange: { base: formatDate(base), tomorrow: formatDate(tomorrow) } },
+        this.logger
+      );
     }
   }
 
   private async getEntriesByHour(dateRange: DateRange = getDateRange()): Promise<HourlyData> {
+    const { base, tomorrow } = dateRange;
     try {
-      const { base, tomorrow } = dateRange;
       const hourlyData = initializeHourlyData();
 
       const entriesByHour = await this.accessLogsRepository
@@ -153,14 +169,18 @@ export class ReportDataService {
       });
       return hourlyData;
     } catch (error) {
-      this.logger.warn(`Error al obtener entradas por hora: ${error.message}`);
-      return initializeHourlyData();
+      handleReportDataError(
+        error,
+        'entries by hour',
+        { dateRange: { base: formatDate(base), tomorrow: formatDate(tomorrow) } },
+        this.logger
+      );
     }
   }
 
   private async getExitsByHour(dateRange: DateRange = getDateRange()): Promise<HourlyData> {
+    const { base, tomorrow } = dateRange;
     try {
-      const { base, tomorrow } = dateRange;
       const hourlyData = initializeHourlyData();
 
       const exitsByHour = await this.accessLogsRepository
@@ -177,14 +197,18 @@ export class ReportDataService {
       });
       return hourlyData;
     } catch (error) {
-      this.logger.warn(`Error al obtener salidas por hora: ${error.message}`);
-      return initializeHourlyData();
+      handleReportDataError(
+        error,
+        'exits by hour',
+        { dateRange: { base: formatDate(base), tomorrow: formatDate(tomorrow) } },
+        this.logger
+      );
     }
   }
 
   private async getIncidentsByHour(dateRange: DateRange = getDateRange()): Promise<HourlyData> {
+    const { base, tomorrow } = dateRange;
     try {
-      const { base, tomorrow } = dateRange;
       const hourlyData = initializeHourlyData();
 
       const incidentsByHour = await this.incidentsRepository
@@ -201,14 +225,18 @@ export class ReportDataService {
       });
       return hourlyData;
     } catch (error) {
-      this.logger.warn(`Error al obtener incidentes por hora: ${error.message}`);
-      return initializeHourlyData();
+      handleReportDataError(
+        error,
+        'incidents by hour',
+        { dateRange: { base: formatDate(base), tomorrow: formatDate(tomorrow) } },
+        this.logger
+      );
     }
   }
 
   private async getEntriesByType(dateRange: DateRange = getDateRange()): Promise<HourlyData> {
+    const { base, tomorrow } = dateRange;
     try {
-      const { base, tomorrow } = dateRange;
       const typeData = await this.initializeByTypeData();
 
       const entriesByType = await this.accessLogsRepository
@@ -224,14 +252,18 @@ export class ReportDataService {
       });
       return typeData;
     } catch (error) {
-      this.logger.warn(`Error al obtener entradas por tipo: ${error.message}`);
-      return {};
+      handleReportDataError(
+        error,
+        'entries by type',
+        { dateRange: { base: formatDate(base), tomorrow: formatDate(tomorrow) } },
+        this.logger
+      );
     }
   }
 
   private async getIncidentsByType(dateRange: DateRange = getDateRange()): Promise<HourlyData> {
+    const { base, tomorrow } = dateRange;
     try {
-      const { base, tomorrow } = dateRange;
       const typeData = await this.initializeByTypeData();
 
       const incidentsByType = await this.incidentsRepository
@@ -249,8 +281,12 @@ export class ReportDataService {
       });
       return typeData;
     } catch (error) {
-      this.logger.warn(`Error al obtener incidentes por tipo: ${error.message}`);
-      return {};
+      handleReportDataError(
+        error,
+        'incidents by type',
+        { dateRange: { base: formatDate(base), tomorrow: formatDate(tomorrow) } },
+        this.logger
+      );
     }
   }
 
@@ -262,15 +298,18 @@ export class ReportDataService {
         return acc;
       }, {} as HourlyData);
     } catch (error) {
-      this.logger.warn(`Error al inicializar datos por tipo: ${error.message}`);
-      return {};
+      handleDatabaseError(
+        error,
+        'initialize vehicle types data',
+        {},
+        this.logger
+      );
     }
   }
 
   private async getAverageTime(dateRange: DateRange = getDateRange()): Promise<number> {
+    const { base, tomorrow } = dateRange;
     try {
-      const { base, tomorrow } = dateRange;
-
       const averageTime = await this.accessLogsRepository
         .createQueryBuilder('accessLog')
         .select('AVG(EXTRACT(EPOCH FROM (accessLog.exit_date - accessLog.entry_date)) / 60)', 'avg_time')
@@ -280,8 +319,12 @@ export class ReportDataService {
 
       return averageTime?.avg_time ? parseFloat(averageTime.avg_time) : 0;
     } catch (error) {
-      this.logger.warn(`Error al obtener tiempo promedio: ${error.message}`);
-      return 0;
+      handleReportDataError(
+        error,
+        'average time calculation',
+        { dateRange: { base: formatDate(base), tomorrow: formatDate(tomorrow) } },
+        this.logger
+      );
     }
   }
 
@@ -322,11 +365,17 @@ export class ReportDataService {
         }
       };
     } catch (error) {
-      this.logger.warn(`Error al obtener horas pico: ${error.message}`);
-      return {
-        peakEntryHour: { hour: 0, count: 0 },
-        peakExitHour: { hour: 0, count: 0 }
-      };
+      handleReportDataError(
+        error,
+        'peak hours calculation',
+        {
+          dateRange: dateRange ? {
+            base: formatDate(dateRange.base),
+            tomorrow: formatDate(dateRange.tomorrow)
+          } : 'default range'
+        },
+        this.logger
+      );
     }
   }
 }

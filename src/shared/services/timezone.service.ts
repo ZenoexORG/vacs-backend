@@ -1,5 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
+import * as moment from 'moment-timezone';
 
 @Injectable()
 export class TimezoneService {
@@ -67,6 +68,16 @@ export class TimezoneService {
     toISOString(date: Date | string): string | null {
         const formatted = this.formatDate(date);
         return formatted ? formatted.toISOString() : null;
+    }
+
+    /**
+     * Converts a date to the application timezone
+     * @param date Date to convert
+     * @returns Converted date
+     */
+    toTimezone(date: Date | string): string | null {
+        if (!date) return null;
+        return moment(date).tz(this.timezone).format();
     }
 
     /**

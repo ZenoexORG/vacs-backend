@@ -7,6 +7,7 @@ Backend service built with NestJS for VACS - a system designed to manage and con
 - Node.js (v16 or higher)
 - npm or yarn
 - PostgreSQL (latest stable version)
+- Redis (for queue processing and caching)
 - Git
 
 ## 🔧 Installation
@@ -25,7 +26,7 @@ yarn install
 ```
 
 3. Set up environment variables:
-   - Create an `.env` file in the project root based on the `.env.example` file
+   - Create an `.env` file in the project root based on the [`.env.example`](.env.example ) file
 
 ```
 # Server Configuration
@@ -49,6 +50,28 @@ DEVICE_API_KEY=your_strong_random_generated_api_key
 
 # Client URL (for CORS)
 CLIENT_URL=http://localhost:4200
+
+# Redis Configuration (required for Bull queue processing)
+REDIS_HOST=localhost
+REDIS_PORT=6379
+REDIS_PASSWORD=your_redis_password_if_any
+
+# Dwell Time Configuration (in minutes)
+DWELL_TIME_DEFAULT_THRESHOLD=1
+DWELL_TIME_CACHE_TIMEOUT_MINUTES=120
+
+# Timezone
+TIMEZONE=America/Bogota
+```
+
+4. Set up Redis
+   - Make sure Redis server is running on your system or via Docker:
+```bash
+# Using Docker
+docker run --name redis -p 6379:6379 -d redis:alpine
+
+# Check if Redis is running
+docker ps | grep redis
 ```
 
 ## 🚀 Running the Application
@@ -161,6 +184,7 @@ yarn test:e2e
 - 🔔 Real-time notifications via WebSockets
 - 🌐 RESTful API with comprehensive Swagger documentation
 - 🔄 Automated daily report generation
+- 📊 Queue-based background processing with Bull
 - 🧩 Modular architecture for easy extensibility
 
 ## 🛠️ Technologies
@@ -173,24 +197,35 @@ yarn test:e2e
 - 📊 ChartJS - For generating report charts and visualizations
 - 📄 PDFKit - For generating PDF reports
 - 🔄 Socket.IO - For real-time notifications
+- 📬 Bull - For background job processing
+- 🧩 Redis - For caching and queue management
 
 ## 👨‍💻 Contributors
 
-<div style="display:flex; flex-wrap: wrap; gap: 10px;">
-    <a href="https://github.com/L30N4RD018" target="_blank">
-        <img src="https://github.com/L30N4RD018.png" width="60" height="60" alt="Leonardo Mendoza" style="border-radius:50%">
-    </a>
-    <a href="https://github.com/XNeyMo" target="_blank">
-        <img src="https://github.com/XNeyMo.png" width="60" height="60" alt="Neyan Montes" style="border-radius:50%">
-    </a>
-    <a href="https://github.com/AAlvarinoB" target="_blank">
-        <img src="https://github.com/AAlvarinoB.png" width="60" height="60" alt="Alberto Alvarino" style="border-radius:50%">
-    </a>
-    <a href="https://github.com/MichaelTaboada2003
-" target="_blank">
-        <img src="https://github.com/MichaelTaboada2003
-.png" width="60" height="60" alt="Michael Taboada" style="border-radius:50%">
-    </a>
+<div style="display: flex; flex-wrap: wrap; gap: 10px;">
+  <a href="https://github.com/L30N4RD018">
+    <img src="https://github.com/L30N4RD018.png" width="60" height="60" alt="Leonardo Mendoza" style="border-radius: 50%;">
+    <br>
+    <sub><b>Leonardo Mendoza</b></sub>
+  </a>
+  
+  <a href="https://github.com/XNeyMo">
+    <img src="https://github.com/XNeyMo.png" width="60" height="60" alt="Neyan Montes" style="border-radius: 50%;">
+    <br>
+    <sub><b>Neyan Montes</b></sub>
+  </a>
+  
+  <a href="https://github.com/AAlvarinoB">
+    <img src="https://github.com/AAlvarinoB.png" width="60" height="60" alt="Alberto Alvarino" style="border-radius: 50%;">
+    <br>
+    <sub><b>Alberto Alvarino</b></sub>
+  </a>
+  
+  <a href="https://github.com/MichaelTaboada2003">
+    <img src="https://github.com/MichaelTaboada2003.png" width="60" height="60" alt="Michael Taboada" style="border-radius: 50%;">
+    <br>
+    <sub><b>Michael Taboada</b></sub>
+  </a>
 </div>
 
 ## 📄 License

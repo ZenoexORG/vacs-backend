@@ -1,6 +1,7 @@
-import { Entity, Column, PrimaryColumn, JoinColumn, OneToOne, ManyToOne } from 'typeorm';
+import { Entity, Column, PrimaryColumn, JoinColumn, OneToOne, ManyToOne, OneToMany } from 'typeorm';
 import { User } from '../../users/entities/user.entity';
 import { VehicleType } from 'src/modules/vehicle_types/entities/vehicle-type.entity';
+import { AccessLog } from 'src/modules/access_logs/entities/access-log.entity';
 
 @Entity('vehicles')
 export class Vehicle {
@@ -29,4 +30,7 @@ export class Vehicle {
   @OneToOne(() => VehicleType, (vehicleType) => vehicleType.vehicle)
   @JoinColumn({ name: 'type_id' })
   type: VehicleType;
+
+  @OneToMany(() => AccessLog, (accessLog) => accessLog.vehicle, { nullable: true })
+  access_logs: AccessLog[];
 }

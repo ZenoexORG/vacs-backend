@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { NotificationsService } from '../notifications/notifications.service';
 import { VehicleType } from '../vehicle_types/entities/vehicle-type.entity';
 import { PaginationService } from 'src/shared/services/pagination.service';
@@ -9,9 +9,11 @@ import { Vehicle } from './entities/vehicle.entity';
 import { User } from '../users/entities/user.entity';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
+import { handleNotFoundError, handleDatabaseError, handleValidationError } from 'src/shared/utils/errors.utils';
 
 @Injectable()
 export class VehiclesService {
+  private readonly logger = new Logger(VehiclesService.name);
   constructor(
     @InjectRepository(Vehicle)
     private readonly vehicleRepository: Repository<Vehicle>,
@@ -24,24 +26,33 @@ export class VehiclesService {
   ) { }
 
   async create(createVehicleDto: CreateVehicleDto) {
-    const { id, owner_id, type_id } = createVehicleDto;
+    try {
+      const { id, owner_id, type_id } = createVehicleDto;
 
-    const vehicleExists = await this.vehicleRepository.findOne({ where: { id }, select: { id: true } });
-    if (vehicleExists) throw new BadRequestException('Vehicle with this license plate already exists');
+      const vehicleExists = await this.vehicleRepository.findOne({ where: { id }, select: { id: true } });
+      if (vehicleExists) handleValidationError('id', { dto: createVehicleDto }, this.logger);
 
-    const userExists = await this.userRepository.findOne({ where: { id: owner_id }, select: { id: true } });
-    if (!userExists) throw new NotFoundException('User with this identifier does not exist');
+      const userExists = await this.userRepository.findOne({ where: { id: owner_id }, select: { id: true } });
+      if (!userExists) handleNotFoundError('User not found', owner_id, this.logger);
 
-    const vehicleTypeExists = await this.vehicleTypeRepository.findOne({ where: { id: type_id }, select: { id: true } });
-    if (!vehicleTypeExists) throw new NotFoundException('Vehicle type does not exist');
+      const vehicleTypeExists = await this.vehicleTypeRepository.findOne({ where: { id: type_id }, select: { id: true } });
+      if (!vehicleTypeExists) handleNotFoundError('Vehicle type not found', type_id, this.logger);
 
-    const newVehicle = await this.vehicleRepository.save(createVehicleDto);
+      const newVehicle = await this.vehicleRepository.save(createVehicleDto);
 
-    setImmediate(() => {
-      this.notificationsService.notifyVehicleCreated(newVehicle);
-    });
+      setImmediate(() => {
+        this.notificationsService.notifyVehicle(newVehicle);
+      });
 
-    return newVehicle;
+      return newVehicle;
+    } catch (error) {
+      handleDatabaseError(
+        error,
+        'Error creating vehicle',
+        { dto: createVehicleDto },
+        this.logger,
+      );
+    }
   }
 
   async findAll(paginationDto: PaginationDto) {
@@ -62,43 +73,65 @@ export class VehiclesService {
   }
 
   async findOne(id: string) {
-    const vehicle = await this.vehicleRepository.findOne({
-      where: { id },
-      relations: { type: true, user: true },
-    });
-    if (!vehicle) {
-      throw new NotFoundException(`Vehicle with id ${id} not found`);
+    try {
+      const vehicle = await this.vehicleRepository.findOne({
+        where: { id },
+        relations: { type: true, user: true },
+      });
+      if (!vehicle) handleNotFoundError('Vehicle not found', id, this.logger);
+      const formattedVehicle = this.formatVehicles([vehicle]);
+      return formattedVehicle[0];
+    } catch (error) {
+      handleDatabaseError(
+        error,
+        'Error finding vehicle',
+        { id },
+        this.logger,
+      );
     }
-    const formattedVehicle = this.formatVehicles([vehicle]);
-    return formattedVehicle[0];
   }
 
   async update(id: string, updateVehicleDto: UpdateVehicleDto) {
-    const { owner_id, type_id } = updateVehicleDto;
+    try {
+      const { owner_id, type_id } = updateVehicleDto;
+      const vehicleExists = await this.vehicleRepository.findOne({ where: { id }, select: { id: true } });
+      if (!vehicleExists) handleNotFoundError('Vehicle not found', id, this.logger);
+      const userExists = await this.userRepository.findOne({ where: { id: owner_id }, select: { id: true } });
+      if (owner_id && !userExists) handleValidationError('owner_id', { dto: updateVehicleDto }, this.logger);
+      const vehicleTypeExists = await this.vehicleTypeRepository.findOne({ where: { id: type_id }, select: { id: true } });
+      if (type_id && !vehicleTypeExists) handleValidationError('type_id', { dto: updateVehicleDto }, this.logger);
 
-    const vehicleExists = await this.vehicleRepository.findOne({ where: { id }, select: { id: true } });
-    if (!vehicleExists) throw new NotFoundException(`Vehicle with id ${id} not found`);
-    const userExists = await this.userRepository.findOne({ where: { id: owner_id }, select: { id: true } });
-    if (!userExists) throw new NotFoundException(`User with id ${owner_id} does not exist`);
-    const vehicleTypeExists = await this.vehicleTypeRepository.findOne({ where: { id: type_id }, select: { id: true } });
-    if (!vehicleTypeExists) throw new NotFoundException(`Vehicle type does not exist`);
-
-    await this.vehicleRepository.update(id, updateVehicleDto);
-    const updatedVehicle = await this.vehicleRepository.findOne({
-      where: { id },
-      relations: { type: true, user: true },
-    });
-    this.notificationsService.notifyVehicleUpdated(updatedVehicle);
-    return updatedVehicle;
+      await this.vehicleRepository.update(id, updateVehicleDto);
+      const updatedVehicle = await this.vehicleRepository.findOne({
+        where: { id },
+        relations: { type: true, user: true },
+      });
+      this.notificationsService.notifyVehicle(updatedVehicle);
+      return updatedVehicle;
+    } catch (error) {
+      handleDatabaseError(
+        error,
+        'Error updating vehicle',
+        { id, dto: updateVehicleDto },
+        this.logger,
+      );
+    }
   }
 
   async remove(id: string): Promise<Vehicle> {
-    const vehicle = await this.vehicleRepository.findOne({ where: { id } });
-    if (!vehicle) {
-      throw new NotFoundException('Vehicle not found');
+    try {
+      const vehicle = await this.vehicleRepository.findOne({ where: { id } });
+      if (!vehicle) handleNotFoundError('Vehicle not found', id, this.logger);
+      this.notificationsService.notifyVehicle(vehicle);
+      return this.vehicleRepository.remove(vehicle);
+    } catch (error) {
+      handleDatabaseError(
+        error,
+        'Error deleting vehicle',
+        { id },
+        this.logger,
+      );
     }
-    this.notificationsService.notifyVehicleDeleted(vehicle);
-    return this.vehicleRepository.remove(vehicle);
   }
 
   private formatVehicles(vehicles: Vehicle[]) {

@@ -1,18 +1,17 @@
-import { IsOptional, IsString, IsISO8601, Matches, IsNotEmpty, IsEnum, IsBoolean } from 'class-validator';
+import { IsISO8601, IsNotEmpty, IsEnum, IsInt } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
-import { Type } from 'class-transformer';
 import { PriorityLevel } from 'src/shared/enums/priorityLevel.enum';
+import { IncidentStatus } from 'src/shared/enums/incidentStatus.enum';
 
 export class CreateIncidentDto {
-  @ApiProperty({ description: 'Vehicle id', example: 'ABC123' })
-  @Matches(/^[A-Z]{3}\d{3}$/, { message: 'Vehicle id must be in the format ABC123' })
-  @IsString({ message: 'Vehicle id must be a string' })
-  @IsNotEmpty({ message: 'Vehicle id is required' })
-  vehicle_id: string;
+  @ApiProperty({ description: 'Access log ID', example: 1 })
+  @IsNotEmpty({ message: 'Access log ID is required' })
+  @IsInt({ message: 'Access log ID must be an integer' })
+  access_log_id: number;
 
   @ApiProperty({ description: 'Incident date', example: '2025-05-01T00:00:00.000Z' })
   @IsISO8601({}, { message: 'Incident date must be in ISO8601 format' })
-  incident_date: string;
+  date: string;
 
   @ApiProperty({
     description: 'Priority level',
@@ -24,11 +23,11 @@ export class CreateIncidentDto {
   priority: string;
 
   @ApiProperty({
-    description: 'Incident status (resolved or not)',
-    example: false,
-    default: false
+    description: 'Incident status',
+    example: 'OPEN',
+    enum: IncidentStatus
   })
-  @IsBoolean({ message: 'Status must be a boolean' })
-  @IsOptional()
-  status?: boolean;
+  @IsEnum(IncidentStatus, { message: 'Status must be open, in_progress, resolved, closed, escalated, or cancelled' })
+  @IsNotEmpty({ message: 'Status is required' })
+  status: IncidentStatus;
 }

@@ -6,14 +6,23 @@ import { NotificationsModule } from '../notifications/notifications.module';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { Incident } from './entities/incident.entity';
 import { Vehicle } from '../vehicles/entities/vehicle.entity';
+import { BullModule } from '@nestjs/bull';
+import { DwellTimeProcessor } from './dwell-time.processor';
+import { DwellTimeMonitorService } from './dwell-time-monitor.service';
+import { AccessLog } from '../access_logs/entities/access-log.entity';
+import { VehicleType } from '../vehicle_types/entities/vehicle-type.entity';
+import { TimezoneService } from 'src/shared/services/timezone.service';
+
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([Incident, Vehicle]),
+    BullModule.registerQueue({ name: 'dwell-time', }),
+    TypeOrmModule.forFeature([Incident, Vehicle, AccessLog, VehicleType]),
     NotificationsModule,
   ],
   controllers: [IncidentsController],
-  providers: [IncidentsService, PaginationService],
-  exports: [IncidentsService],
+  providers: [IncidentsService, PaginationService,
+    DwellTimeProcessor, DwellTimeMonitorService, TimezoneService],
+  exports: [IncidentsService, DwellTimeMonitorService, DwellTimeProcessor],
 })
-export class IncidentsModule {}
+export class IncidentsModule { }

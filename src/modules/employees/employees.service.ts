@@ -1,10 +1,4 @@
-import {
-  Injectable,
-  BadRequestException,
-  NotFoundException,
-  Inject,
-  forwardRef,
-} from '@nestjs/common';
+import { Injectable, Inject, forwardRef, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, Not } from 'typeorm';
 import { CreateEmployeeDto } from './dto/create-employee.dto';
@@ -14,9 +8,11 @@ import { Employee } from './entities/employee.entity';
 import { Permission } from '../permissions/entities/permission.entity';
 import { PaginationService } from 'src/shared/services/pagination.service';
 import { NotificationsService } from '../notifications/notifications.service';
+import { handleNotFoundError, handleDatabaseError, handleValidationError } from 'src/shared/utils/errors.utils';
 
 @Injectable()
 export class EmployeesService {
+  private readonly logger = new Logger(EmployeesService.name);
   constructor(
     @InjectRepository(Employee)
     private employeesRepository: Repository<Employee>,
@@ -26,22 +22,32 @@ export class EmployeesService {
   ) { }
 
   async create(createEmployeeDto: CreateEmployeeDto): Promise<Employee> {
-    const existingEmployee = await this.employeesRepository.findOne({
-      where: [
-        { username: createEmployeeDto.username },
-        { id: createEmployeeDto.id },
-      ],
-    });
-    if (existingEmployee) {
-      throw new BadRequestException(
-        existingEmployee.username === createEmployeeDto.username
-          ? 'Username already exists'
-          : 'ID already exists',
+    try {
+      const existingEmployee = await this.employeesRepository.findOne({
+        where: [
+          { username: createEmployeeDto.username },
+          { id: createEmployeeDto.id },
+        ],
+      });
+      if (existingEmployee) {
+        if (existingEmployee.username === createEmployeeDto.username) {
+          handleValidationError('username', { dto: createEmployeeDto }, this.logger);
+        }
+        if (existingEmployee.id === createEmployeeDto.id) {
+          handleValidationError('id', { dto: createEmployeeDto }, this.logger);
+        }
+      }
+      const newEmployee = this.employeesRepository.create(createEmployeeDto);
+      this.notificationsService.notifyEmployee(newEmployee);
+      return this.employeesRepository.save(newEmployee);
+    } catch (error) {
+      handleDatabaseError(
+        error,
+        'Error creating employee',
+        { dto: createEmployeeDto },
+        this.logger,
       );
     }
-    const newEmployee = this.employeesRepository.create(createEmployeeDto);
-    this.notificationsService.notifyEmployeeCreated(newEmployee);
-    return this.employeesRepository.save(newEmployee);
   }
 
   async findAll(paginationDto: PaginationDto) {
@@ -61,60 +67,84 @@ export class EmployeesService {
   }
 
   async findOne(id: string) {
-    const employee = await this.employeesRepository.findOne({
-      where: { id },
-      relations: { role: { permissions: true } },
-    });
-    if (!employee) {
-      throw new NotFoundException(`Employee with ID "${id}" not found`);
+    try {
+      const employee = await this.employeesRepository.findOne({
+        where: { id },
+        relations: { role: { permissions: true } },
+      });
+      if (!employee) handleNotFoundError('Employee', id, this.logger);
+      return employee;
+    } catch (error) {
+      handleDatabaseError(
+        error,
+        'Error finding employee',
+        { id },
+        this.logger,
+      );
     }
-    return employee;
   }
 
   async update(id: string, updateEmployeeDto: UpdateEmployeeDto) {
-    const existingEmployee = await this.employeesRepository.findOne({
-      where: { id },
-    });
-    if (!existingEmployee) {
-      throw new NotFoundException(`Employee with ID "${id}" not found`);
-    }
-
-    if (updateEmployeeDto.username) {
-      const duplicateUsername = await this.employeesRepository.findOne({
-        where: { username: updateEmployeeDto.username, id: Not(id) },
+    try {
+      const existingEmployee = await this.employeesRepository.findOne({
+        where: { id },
       });
-      if (duplicateUsername) {
-        throw new BadRequestException('Username already exists');
+      if (!existingEmployee) handleNotFoundError('Employee', id, this.logger);
+
+      if (updateEmployeeDto.username) {
+        const duplicateUsername = await this.employeesRepository.findOne({
+          where: { username: updateEmployeeDto.username, id: Not(id) },
+        });
+        if (duplicateUsername) handleValidationError('username', { dto: updateEmployeeDto }, this.logger);
       }
+      const updatedEmployee = this.employeesRepository.create({
+        ...existingEmployee,
+        ...updateEmployeeDto,
+      });
+      this.notificationsService.notifyEmployee(updatedEmployee);
+      return this.employeesRepository.save(updatedEmployee);
+    } catch (error) {
+      handleDatabaseError(
+        error,
+        'Error updating employee',
+        { id, dto: updateEmployeeDto },
+        this.logger,
+      );
     }
-    const updatedEmployee = this.employeesRepository.create({
-      ...existingEmployee,
-      ...updateEmployeeDto,
-    });
-    this.notificationsService.notifyEmployeeUpdated(updatedEmployee);
-    return this.employeesRepository.save(updatedEmployee);
   }
 
   async remove(id: string) {
-    const employee = await this.employeesRepository.findOne({ where: { id } });
-    if (!employee) {
-      throw new NotFoundException('Employee not found');
+    try {
+      const employee = await this.employeesRepository.findOne({ where: { id } });
+      if (!employee) handleNotFoundError('Employee', id, this.logger);
+      this.notificationsService.notifyEmployee(employee);
+      return this.employeesRepository.delete(id);
+    } catch (error) {
+      handleDatabaseError(
+        error,
+        'Error deleting employee',
+        { id },
+        this.logger,
+      );
     }
-    this.notificationsService.notifyEmployeeDeleted(employee);
-    return this.employeesRepository.delete(id);
   }
 
   async findByUsername(username: string) {
-    const employee = await this.employeesRepository.findOne({
-      where: { username },
-      relations: { role: { permissions: true } },
-    });
-    if (!employee) {
-      throw new NotFoundException(
-        `Employee with username "${username}" not found`,
+    try {
+      const employee = await this.employeesRepository.findOne({
+        where: { username },
+        relations: { role: { permissions: true } },
+      });
+      if (!employee) handleNotFoundError('Employee', username, this.logger);
+      return employee;
+    } catch (error) {
+      handleDatabaseError(
+        error,
+        'Error finding employee by username',
+        { username },
+        this.logger,
       );
     }
-    return employee;
   }
 
   private formatEmployeesWithPermissions(employees: Employee[]) {

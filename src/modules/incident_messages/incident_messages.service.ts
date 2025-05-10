@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Incident } from '../incidents/entities/incident.entity';
@@ -7,9 +7,11 @@ import { CreateIncidentMessageDto } from './dto/create_incident_message.dto';
 import { UpdateIncidentMessageDto } from './dto/update_incident_message.dto';
 import { PaginationDto } from '../../shared/dtos/pagination.dto';
 import { PaginationService } from 'src/shared/services/pagination.service';
+import { handleNotFoundError, handleDatabaseError } from 'src/shared/utils/errors.utils';
 
 @Injectable()
 export class IncidentMessagesService {
+	private readonly logger = new Logger(IncidentMessagesService.name);
 	constructor(
 		@InjectRepository(IncidentMessage)
 		private readonly incidentMessageRepository: Repository<IncidentMessage>,
@@ -19,73 +21,153 @@ export class IncidentMessagesService {
 	) { }
 
 	async create(createIncidentMessageDto: CreateIncidentMessageDto, authorId: string) {
-		const incident = await this.incidentRepository.findOne({
-			where: { id: createIncidentMessageDto.incident_id },
-			select: { id: true }
-		});
-		if (!incident) throw new NotFoundException(`Incident with ID ${createIncidentMessageDto.incident_id} not found`);
-		const newIncidentMessage = this.incidentMessageRepository.create({
-			...createIncidentMessageDto,
-			author: { id: authorId },
-		});
-		return this.incidentMessageRepository.save(newIncidentMessage);
+		try {
+			const incident = await this.incidentRepository.findOne({
+				where: { id: createIncidentMessageDto.incident_id },
+				select: { id: true }
+			});
+			if (!incident) handleNotFoundError('Incident', createIncidentMessageDto.incident_id, this.logger);
+			const newIncidentMessage = this.incidentMessageRepository.create({
+				...createIncidentMessageDto,
+				author: { id: authorId },
+			});
+			return this.incidentMessageRepository.save(newIncidentMessage);
+		} catch (error) {
+			handleDatabaseError(
+				error,
+				'creating incident message',
+				{ dto: createIncidentMessageDto },
+				this.logger,
+			);
+		}
 	}
 
 	async findAll(paginationDto: PaginationDto) {
 		const { page, limit } = paginationDto;
 
-		return this.paginationService.paginate(
+		const result = await this.paginationService.paginate(
 			this.incidentMessageRepository,
 			page || 1,
 			limit || Number.MAX_SAFE_INTEGER,
 			{
 				order: { created_at: 'desc' },
-				relations: { incident: true, author: true }
+				relations: { incident: true, author: true },
+				select: {
+					id: true,
+					incident_id: true,
+					message: true,
+					created_at: true,
+					incident: {
+						id: true,
+						access_log_id: true,
+						date: true,
+						priority: true,
+						status: true,
+					},
+					author: {
+						name: true,
+						last_name: true,
+					}
+				}
 			}
 		);
+		const formattedResult = result.data.map((message) => {
+			const { author, ...rest } = message;
+			return {
+				...rest,
+				author: `${author.name} ${author.last_name}`,
+			}
+		});
+		return {
+			data: formattedResult,
+			meta: result.meta,
+		};
 	}
 
 	async findOne(id: number) {
-		const message = await this.incidentMessageRepository.findOne({
-			where: { id },
-			relations: { incident: true, author: true }
-		});
+		try {
+			const message = await this.incidentMessageRepository.findOne({
+				where: { id },
+				relations: { incident: true, author: true },
+				select: {
+					id: true,
+					incident_id: true,
+					message: true,
+					created_at: true,
+					incident: {
+						id: true,
+						access_log_id: true,
+						date: true,
+						priority: true,
+						status: true,
+					},
+					author: {
+						name: true,
+						last_name: true,
+					}
+				}
+			});
 
-		if (!message) {
-			throw new NotFoundException(`Incident message with ID ${id} not found`);
+			if (!message) {
+				handleNotFoundError('Incident message', id, this.logger);
+			}
+			const { author, ...rest } = message;
+			return {
+				...rest,
+				author: `${author.name} ${author.last_name}`,
+			}
+		} catch (error) {
+			handleDatabaseError(
+				error,
+				'finding incident message',
+				{ id },
+				this.logger,
+			);
 		}
-
-		return message;
 	}
 
 	async update(id: number, updateIncidentMessageDto: UpdateIncidentMessageDto) {
-		const message = await this.incidentMessageRepository.findOne({
-			where: { id }
-		});
+		try {
+			const message = await this.incidentMessageRepository.findOne({
+				where: { id }
+			});
 
-		if (!message) {
-			throw new NotFoundException(`Incident message with ID ${id} not found`);
+			if (!message) handleNotFoundError('Incident message', id, this.logger);
+
+			await this.incidentMessageRepository.update(id, updateIncidentMessageDto);
+
+			const updatedMessage = await this.incidentMessageRepository.findOne({
+				where: { id },
+				relations: { incident: true, author: true }
+			});
+
+			return updatedMessage;
+		} catch (error) {
+			handleDatabaseError(
+				error,
+				'updating incident message',
+				{ id, dto: updateIncidentMessageDto },
+				this.logger,
+			);
 		}
-
-		await this.incidentMessageRepository.update(id, updateIncidentMessageDto);
-
-		const updatedMessage = await this.incidentMessageRepository.findOne({
-			where: { id },
-			relations: { incident: true, author: true }
-		});
-
-		return updatedMessage;
 	}
 
 	async remove(id: number) {
-		const message = await this.incidentMessageRepository.findOne({
-			where: { id }
-		});
+		try {
+			const message = await this.incidentMessageRepository.findOne({
+				where: { id }
+			});
 
-		if (!message) {
-			throw new NotFoundException(`Incident message with ID ${id} not found`);
+			if (!message) handleNotFoundError('Incident message', id, this.logger);
+
+			return this.incidentMessageRepository.remove(message);
+		} catch (error) {
+			handleDatabaseError(
+				error,
+				'deleting incident message',
+				{ id },
+				this.logger,
+			);
 		}
-
-		return this.incidentMessageRepository.remove(message);
 	}
 }

@@ -31,7 +31,7 @@ export class DailyReportService {
       await this.createReport(reportData);
       this.logger.log(`Reporte diario generado para la fecha ${formatDate(currentDate)}`);
     } catch (error) {
-      this.logger.error(`Error al generar reporte automático: ${error.message}`, error.stack);
+      this.logger.error(`Error al generar reporte automático: ${error.message}`);
     }
   }
 
@@ -71,7 +71,7 @@ export class DailyReportService {
 
       return this.reportRepository.save(newReport);
     } catch (error) {
-      this.logger.error(`Error al crear/actualizar reporte: ${error.message}`, error.stack);
+      this.logger.error(`Error al crear/actualizar reporte: ${error.message}`);
       throw error;
     }
   }
@@ -113,7 +113,7 @@ export class DailyReportService {
       const reportData = await this.reportDataService.getReportData(date);
       return this.createReport(reportData, date);
     } catch (error) {
-      this.logger.error(`Error al generar reporte para fecha ${date}: ${error.message}`, error.stack);
+      this.logger.error(`Error al generar reporte para fecha ${date}: ${error.message}`);
       throw error;
     }
   }

@@ -32,8 +32,14 @@ export class AuthService {
 
     return {
       message: 'Login successful',
-      token: this.jwtService.sign(payload, { expiresIn: '4h' }),
-      viewPermissions: this.jwtService.sign(payload, { expiresIn: '4h' }),
+      token: this.jwtService.sign(payload, {
+        secret: process.env.JWT_SECRET,
+        expiresIn: '4h'
+      }),
+      viewPermissions: this.jwtService.sign(payload, {
+        secret: process.env.JWT_SECRET,
+        expiresIn: '4h'
+      }),
     }
   }
 }

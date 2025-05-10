@@ -6,6 +6,7 @@ import { UpdateIncidentDto } from './dto/update-incident.dto';
 import { IncidentsService } from './incidents.service';
 import { Auth } from 'src/shared/decorators/permissions.decorator';
 import { AppPermissions } from 'src/shared/enums/permissions.enum';
+import { IncidentsPaginationDto } from './dto/incidents_pagination.dto';
 
 @ApiTags('Incidents')
 @Controller('incidents')
@@ -22,22 +23,14 @@ export class IncidentsController {
   }
 
   @ApiOperation({ summary: 'Get all incidents' })
-  @ApiQuery({
-    name: 'limit',
-    description: 'Number of items per page',
-    required: false,
-    default: 10,
-  })
-  @ApiQuery({
-    name: 'page',
-    description: 'Page number',
-    required: false,
-    default: 1,
-  })
+  @ApiQuery({ name: 'limit', description: 'Number of items per page', required: false, default: 10 })
+  @ApiQuery({ name: 'page', description: 'Page number', required: false, default: 1 })
+  @ApiQuery({ name: 'status', description: 'Incident status', required: false })
+  @ApiQuery({ name: 'priority', description: 'Incident priority', required: false })
   @Auth(AppPermissions.INCIDENTS_VIEW)
   @Get()
   @ConvertDates(['incident_date', 'solution_date'])
-  async findAll(@Query() paginationDto) {
+  async findAll(@Query() paginationDto: IncidentsPaginationDto) {
     return this.incidentsService.findAll(paginationDto);
   }
 

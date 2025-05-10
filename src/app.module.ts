@@ -9,8 +9,10 @@ import { AppService } from './app.service';
 import { DatabaseModule } from './database/database.module';
 import { SharedModule } from './shared/shared.module';
 import { ValidationFilter } from './filters/validation.filter';
+import { ErrorFilter } from './filters/error.filter';
 import { DateRequestInterceptor } from './shared/interceptors/date-request.interceptor';
 import { DateConversionInterceptor } from './shared/interceptors/date-conversion.interceptor';
+import { BullModule } from '@nestjs/bull';
 
 import {
   UsersModule,
@@ -31,6 +33,13 @@ import {
 @Module({
   imports: [
     ConfigModule.forRoot({ isGlobal: true }),
+    BullModule.forRoot({
+      redis: {
+        host: process.env.REDIS_HOST,
+        port: Number(process.env.REDIS_PORT),
+        password: process.env.REDIS_PASSWORD,
+      },
+    }),
     ScheduleModule.forRoot(),
     CacheModule.register({
       isGlobal: true,
@@ -39,7 +48,6 @@ import {
     }),
     DatabaseModule,
     SharedModule,
-    // Feature modules
     AuthModule,
     UsersModule,
     EmployeesModule,
@@ -76,8 +84,12 @@ import {
     },
     {
       provide: APP_FILTER,
-      useClass: ValidationFilter,
+      useClass: ErrorFilter,
     },
+    {
+      provide: APP_FILTER,
+      useClass: ValidationFilter,
+    }
   ],
 })
-export class AppModule {}
+export class AppModule { }
