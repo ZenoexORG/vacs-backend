@@ -213,9 +213,9 @@ export class ReportDataService {
 
       const incidentsByHour = await this.incidentsRepository
         .createQueryBuilder('incident')
-        .select('EXTRACT(HOUR FROM incident.incident_date)', 'hour')
+        .select('EXTRACT(HOUR FROM incident.date)', 'hour')  // Cambiado de incident_date a date
         .addSelect('COUNT(*)', 'count')
-        .where('incident.incident_date BETWEEN :base AND :tomorrow', { base, tomorrow })
+        .where('incident.date BETWEEN :base AND :tomorrow', { base, tomorrow })  // Cambiado de incident_date a date
         .groupBy('hour')
         .getRawMany();
 
@@ -268,12 +268,13 @@ export class ReportDataService {
 
       const incidentsByType = await this.incidentsRepository
         .createQueryBuilder('incident')
-        .leftJoin('vehicles', 'vehicle', 'incident.vehicle_id = vehicle.id')
+        .leftJoin('access_logs', 'accessLog', 'incident.access_log_id = accessLog.id')
+        .leftJoin('vehicles', 'vehicle', 'accessLog.vehicle_id = vehicle.id')
         .leftJoin('vehicle_types', 'VehicleType', 'vehicle.type_id = VehicleType.id')
-        .select('COALESCE(VehicleType.name, \'Sin Registrar\')', 'type')
+        .select('COALESCE(VehicleType.name, accessLog.vehicle_type, \'Sin Registrar\')', 'type')
         .addSelect('COUNT(*)', 'count')
-        .where('incident.incident_date BETWEEN :base AND :tomorrow', { base, tomorrow })
-        .groupBy('COALESCE(VehicleType.name, \'Sin Registrar\')')
+        .where('incident.date BETWEEN :base AND :tomorrow', { base, tomorrow })
+        .groupBy('COALESCE(VehicleType.name, accessLog.vehicle_type, \'Sin Registrar\')')
         .getRawMany();
 
       incidentsByType.forEach(entry => {

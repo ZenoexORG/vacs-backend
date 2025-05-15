@@ -8,6 +8,7 @@ import { UpdateIncidentMessageDto } from './dto/update_incident_message.dto';
 import { PaginationDto } from '../../shared/dtos/pagination.dto';
 import { PaginationService } from 'src/shared/services/pagination.service';
 import { handleNotFoundError, handleDatabaseError } from 'src/shared/utils/errors.utils';
+import { NotificationsService } from '../notifications/notifications.service';
 
 @Injectable()
 export class IncidentMessagesService {
@@ -18,6 +19,7 @@ export class IncidentMessagesService {
 		@InjectRepository(Incident)
 		private readonly incidentRepository: Repository<Incident>,
 		private readonly paginationService: PaginationService,
+		private readonly notificationsService: NotificationsService,
 	) { }
 
 	async create(createIncidentMessageDto: CreateIncidentMessageDto, authorId: string) {
@@ -31,7 +33,9 @@ export class IncidentMessagesService {
 				...createIncidentMessageDto,
 				author: { id: authorId },
 			});
-			return this.incidentMessageRepository.save(newIncidentMessage);
+			const result = await this.incidentMessageRepository.save(newIncidentMessage);
+			this.notificationsService.notifyIncidentMessages(result)
+			return result;
 		} catch (error) {
 			handleDatabaseError(
 				error,
@@ -140,7 +144,7 @@ export class IncidentMessagesService {
 				where: { id },
 				relations: { incident: true, author: true }
 			});
-
+			this.notificationsService.notifyIncidentMessages(updatedMessage)
 			return updatedMessage;
 		} catch (error) {
 			handleDatabaseError(
@@ -159,7 +163,6 @@ export class IncidentMessagesService {
 			});
 
 			if (!message) handleNotFoundError('Incident message', id, this.logger);
-
 			return this.incidentMessageRepository.remove(message);
 		} catch (error) {
 			handleDatabaseError(

@@ -66,4 +66,8 @@ export class NotificationsService {
   notifyIncidentCount(total: number): void {
     this.sendToAll('incidents_count', { total });
   }
+
+  notifyIncidentMessages(data: any): void {
+    this.sendToAll('incident_messages', data);
+  }
 }
