@@ -43,6 +43,10 @@ export class NotificationsService {
     });
   }
 
+  notifyAccessLog(data: any): void {
+    this.sendToAll('access_logs', data);
+  }
+
   notifyIncident(data: any): void {
     this.sendToAll('incidents', data);
   }

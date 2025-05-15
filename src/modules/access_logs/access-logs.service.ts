@@ -194,7 +194,7 @@ export class AccessLogsService {
         entry_date: timestamp,
         vehicle_type: vehicle?.type?.name || 'unregistered',
       });
-      this.notificationsService.notifyVehicle(newAccessLog);
+      this.notificationsService.notifyAccessLog(newAccessLog);
       this.dwellTimeMonitorService.scheduleDwellTimeCheck(newAccessLog);
       return newAccessLog;
     } catch (error) {
@@ -223,7 +223,7 @@ export class AccessLogsService {
       const updatedAccessLog = await this.accessLogRepository.findOne({
         where: { id: latestAccessLog.id },
       });
-      this.notificationsService.notifyVehicle(updatedAccessLog);
+      this.notificationsService.notifyAccessLog(updatedAccessLog);
       return updatedAccessLog;
     } catch (error) {
       handleDatabaseError(
