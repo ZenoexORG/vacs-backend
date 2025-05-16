@@ -23,13 +23,6 @@ export class SetCookieInterceptor implements NestInterceptor {
           });
           dataToRemove['token'] = true;
         }
-        if (data && data.viewPermissions) {
-          response.cookie('viewPermissions', data.viewPermissions, {
-            ...cookieOptions,
-            maxAge: 1000 * 60 * 60 * 4
-          });
-          dataToRemove['viewPermissions'] = true;
-        }
         if (Object.keys(dataToRemove).length > 0) {
           const { token, viewPermissions, ...rest } = data;
           return rest;

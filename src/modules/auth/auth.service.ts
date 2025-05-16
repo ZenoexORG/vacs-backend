@@ -1,4 +1,4 @@
-import { Injectable, UnauthorizedException, Inject } from '@nestjs/common';
+import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { EmployeesService } from '../employees/employees.service';
 import { Employee } from '../employees/entities/employee.entity';
 import { JwtService } from '@nestjs/jwt';
@@ -25,7 +25,6 @@ export class AuthService {
       .filter(permission => permission.endsWith('view')) || [];
 
     const payload = {
-      sub: user.id,
       fullname: `${user.name} ${user.last_name}`,
       role: user.role?.name,
     }
@@ -36,10 +35,10 @@ export class AuthService {
         secret: process.env.JWT_SECRET,
         expiresIn: '4h'
       }),
-      viewPermissions: this.jwtService.sign(payload, {
-        secret: process.env.JWT_SECRET,
-        expiresIn: '4h'
-      }),
+      sessionInfo: {
+        ...payload,
+        viewPermissions,
+      }
     }
   }
 }
