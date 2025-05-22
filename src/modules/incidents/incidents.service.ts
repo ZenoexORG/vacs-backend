@@ -47,6 +47,27 @@ export class IncidentsService {
     if (priority) {
       where.priority = priority;
     }
+
+    // 1. Consulta optimizada para conteos por estado (una sola consulta)
+    const countsByStatusQuery = this.incidentRepository
+      .createQueryBuilder('incident')
+      .select('incident.status', 'incident_status')
+      .addSelect('COUNT(incident.id)', 'count')
+      .groupBy('incident.status');
+
+    if (priority) {
+      countsByStatusQuery.where('incident.priority = :priority', { priority });
+    }
+
+    const countsByStatus = await countsByStatusQuery.getRawMany();
+
+    // Transformamos los resultados en un objeto para fácil acceso
+    const countsMap = countsByStatus.reduce((acc, curr) => {
+      acc[curr.incident_status] = parseInt(curr.count, 10);
+      return acc;
+    }, {});
+
+    // 2. Consulta principal con paginación
     const result = await this.paginationService.paginate(
       this.incidentRepository,
       page || 1,
@@ -72,9 +93,9 @@ export class IncidentsService {
             vehicle_id: true
           }
         }
-
       },
     );
+
     const transformedData = result.data.map(incident => {
       const { access_log, incident_messages, ...rest } = incident;
       const formattedMessages = incident_messages.map(message => {
@@ -90,18 +111,13 @@ export class IncidentsService {
         history: formattedMessages,
       };
     });
-    const openCount = await this.incidentRepository.count({
-      where: { status: IncidentStatus.OPEN }
-    });
-    const closedCount = await this.incidentRepository.count({
-      where: { status: IncidentStatus.CLOSED }
-    });
+
     return {
       data: transformedData,
       meta: {
         ...result.meta,
-        open: openCount,
-        closed: closedCount,
+        open: countsMap[IncidentStatus.OPEN] || 0,
+        closed: countsMap[IncidentStatus.CLOSED] || 0,
       }
     };
   }

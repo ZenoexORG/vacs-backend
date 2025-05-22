@@ -213,9 +213,9 @@ export class ReportDataService {
 
       const incidentsByHour = await this.incidentsRepository
         .createQueryBuilder('incident')
-        .select('EXTRACT(HOUR FROM incident.date)', 'hour')  // Cambiado de incident_date a date
+        .select('EXTRACT(HOUR FROM incident.date)', 'hour')  
         .addSelect('COUNT(*)', 'count')
-        .where('incident.date BETWEEN :base AND :tomorrow', { base, tomorrow })  // Cambiado de incident_date a date
+        .where('incident.date BETWEEN :base AND :tomorrow', { base, tomorrow }) 
         .groupBy('hour')
         .getRawMany();
 

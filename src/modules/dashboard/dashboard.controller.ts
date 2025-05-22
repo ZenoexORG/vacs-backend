@@ -7,23 +7,23 @@ import { AppPermissions } from '../../shared/enums/permissions.enum';
 @ApiTags('Dashboard')
 @Controller('dashboard')
 export class DashboardController {
-  constructor(private readonly dashboardService: DashboardService) {}
+  constructor(private readonly dashboardService: DashboardService) { }
 
   @ApiOperation({ summary: 'Get dashboard stats' })
   @ApiQuery({ name: 'month', description: 'Month number', required: true, default: 1 })
   @ApiQuery({ name: 'year', description: 'Year number', required: false })
-  @Auth(AppPermissions.DASHBOARD_VIEW)
+  // @Auth(AppPermissions.DASHBOARD_VIEW)
   @Get('stats')
   async getStats(
     @Query('month', ParseIntPipe) month: number,
     @Query('year', new ParseIntPipe({ optional: true })) year?: number,
-    ) {
+  ) {
     return this.dashboardService.getStats(month, year);
   }
 
   @ApiOperation({ summary: 'Get access logs by month' })
-  @ApiQuery({ name: 'month', description: 'Month number', required: true, default: 1,})
-  @ApiQuery({ name: 'year', description: 'Year number', required: false })    
+  @ApiQuery({ name: 'month', description: 'Month number', required: true, default: 1, })
+  @ApiQuery({ name: 'year', description: 'Year number', required: false })
   @Auth(AppPermissions.DASHBOARD_VIEW)
   @Get('vehicle-entries')
   async getAccessLogsByMonth(

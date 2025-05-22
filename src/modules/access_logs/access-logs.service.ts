@@ -35,6 +35,7 @@ export class AccessLogsService {
       const newTimestamp = this.timezoneService.formatDate(timestamp);
       if (!newTimestamp) handleValidationError('timestamp', { dto: createAccessLogDto }, this.logger);
       const vehicle = await this.vehicleRepository.findOne({ where: { id: vehicle_id }, relations: { type: true } });
+      console.log('vehicle', vehicle);
       if (access_type === 'entry') {
         return this.handleEntryAccess(vehicle_id, newTimestamp, vehicle ?? undefined);
       } else if (access_type === 'exit') {
@@ -117,12 +118,12 @@ export class AccessLogsService {
 
       const result = await this.accessLogRepository
         .createQueryBuilder('log')
-        .select('log.entry_date', 'entry_date')
+        .select('DATE(log.entry_date)', 'entry_date')
         .addSelect('COUNT(*)', 'total')
         .where('log.entry_date IS NOT NULL')
         .andWhere('log.entry_date BETWEEN :start AND :end', { start, end })
-        .groupBy('log.entry_date')
-        .orderBy('log.entry_date', 'ASC')
+        .groupBy('DATE(log.entry_date)')
+        .orderBy('DATE(log.entry_date)', 'ASC')
         .getRawMany();
 
       const daysMap = new Map();

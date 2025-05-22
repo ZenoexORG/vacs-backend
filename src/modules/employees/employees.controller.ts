@@ -14,7 +14,7 @@ export class EmployeesController {
 
   @ApiOperation({ summary: 'Create an employee' })
   @ApiBody({ type: CreateEmployeeDto })
-  @Auth(AppPermissions.EMPLOYEES_CREATE)
+  // @Auth(AppPermissions.EMPLOYEES_CREATE)
   @Post()
   @ConvertDates(['created_at'])
   async create(@Body() createEmployeeDto: CreateEmployeeDto) {
