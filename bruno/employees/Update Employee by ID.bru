@@ -1,0 +1,31 @@
+meta {
+  name: Update Employee by ID
+  type: http
+  seq: 4
+}
+
+patch {
+  url: {{url}}/employees/:id
+  body: json
+  auth: none
+}
+
+params:path {
+  id: 123456789
+}
+
+body:json {
+  {
+    "id": 123456789,
+    "name": "Juan",
+    "last_name": "Lopez",
+    "role_id": 1,
+    "username": "juanperez",
+    "password": "password",
+    "role": {
+      "id": 1,
+      "name": "admin",
+      "description": "Administrador del sistema"
+    }
+  }
+}

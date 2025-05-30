@@ -1,0 +1,22 @@
+meta {
+  name: Create Employee
+  type: http
+  seq: 1
+}
+
+post {
+  url: {{url}}/employees
+  body: json
+  auth: none
+}
+
+body:json {
+  {
+    "id": 123456789,
+    "name": "Juan",
+    "last_name": "Pérez",
+    "role_id": 1,
+    "username": "juanperez",
+    "password": "password"
+  }
+}

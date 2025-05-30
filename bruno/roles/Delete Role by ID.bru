@@ -1,0 +1,15 @@
+meta {
+  name: Delete Role by ID
+  type: http
+  seq: 5
+}
+
+delete {
+  url: {{url}}/roles/:id
+  body: none
+  auth: none
+}
+
+params:path {
+  id: 1
+}
